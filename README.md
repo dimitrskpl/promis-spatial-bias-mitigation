@@ -10,7 +10,7 @@ This repository contains the official code for the paper titled **PROMIS: PROces
 1. **Creating Worlds (Datasets)**
    - Notebook: `src/create_worlds.ipynb`  
    - Description: Preprocesses datasets, fits an XGBoost model, and creates the audit regions and the semi-synthetic dataset.  
-   **Important**: Please run this notebook first to ensure all necessary data and models are set up correctly. Follow the instructions within the notebook for downloading any required dataset files.
+   **Important**: Please run this notebook first to ensure all necessary data and models are set up correctly. 
 2. **Audit Experiment**
    - Notebook: `src/experiments/audit_exp.ipynb`  
    - Description: Runs the audit experiment.
