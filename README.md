@@ -2,7 +2,23 @@
 
 This repository contains the official code for the paper titled **PROMIS: PROcessing MItigation of Spatial Bias**. 
 
+---
+**Data Source and Download Information**
 
+The following datasets have been downloaded from their respective sources and stored in the data/datasets/ directory for reproducibility. Below are the details for each file:
+
+* CRIME Dataset
+    * Source: [Crime Data from 2010 to 2019](<https://data.lacity.org/Public-Safety/Crime-Data-from-2010-to-2019/63jg-8b9z>)
+    * Download Date: 10/1/2024
+    * The dataset is provided as a ZIP file and is updated monthly. For reproducibility, it was downloaded and saved as Crime_Data_from_2010_to_2019.csv.zip
+* LAR Dataset
+    * Source: [CFPB Modified LAR Data 2021](<https://ffiec.cfpb.gov/data-publication/modified-lar/2021>)
+    * The dataset for 2021 was obtained by, selecting the year 2021, entering the Legal Entity Identifier (LEI) B4TYDEB6GKMZO031MB27 for Bank of America, choosing the option "Include File Header." and clicking on "Download Modified LAR with Header."
+    * It was then saved as: B4TYDEB6GKMZO031MB27.csv.zip
+* Census Gazetteer Data
+    * Source: [Census Gazetteer Files 2021](<https://www.census.gov/geographies/reference-files/time-series/geo/gazetteer-files.2021.html>)
+    * The file was obtained by navigating to the "Census Tracts" section and clicking on "Download the National Census Tracts Gazetteer Files."
+    * It was saved as: 2021_Gaz_tracts_national.txt.zip
 ---
 
 ## Experiments
