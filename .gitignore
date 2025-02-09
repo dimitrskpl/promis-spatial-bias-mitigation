@@ -1,0 +1,7 @@
+my_env/
+results/
+data/
+plots/
+.DS_Store
+__pycache__/
+.ipynb_checkpoints/
