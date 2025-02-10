@@ -1,7 +1,5 @@
 # this script is used to run the experiments on the semi-synthetic crime dataset
-# You can comment the final lines of the script to run the experiments
-# without SpatalFlip method, which takes a long time to run.
-# You can also opt to run on specific audit regions by commenting/uncommenting the
+# You may opt to run on specific audit regions by commenting/uncommenting the
 # the desired lines in the partioning_type_names list.
 # You can also opt to run on specific PROMIS method by commenting/uncommenting the
 # the desired lines in the promis_methods list.
@@ -11,10 +9,7 @@ For each experiment the directory crime_semi_synth_exp/regions_\<partitioning_na
 
 Inside the directory the following files are created:
 
-* for SpatialFlip:
-    * spatial_flip_models/\<fairness_notion>_iter.pkl
-* for PROMIS:
-    * spatial_optim/statistical_parity_<promis_method_name>.pkl (for promis_opt method the wlimit_\<work_limit> is appended)
+* spatial_optim/statistical_parity_<promis_method_name>.pkl (for promis_opt method the wlimit_\<work_limit> is appended)
 """
 
 import os
@@ -99,18 +94,3 @@ for partioning_type_name, overlap in partioning_type_names:
             )
 
         fair_model.save_model(model_save_file)
-
-    fair_model = SpatialFlipFairnessModel("iter")
-    fair_model.multi_fit(
-        points_per_region=test_points_per_region,
-        n_flips_start=n_flips_start,
-        step=step,
-        n_flips=n_flips,
-        y_pred=y_pred_test,
-        overlap=overlap,
-        verbose=1,
-    )
-
-    fair_model.save_model(
-        f"{results_path}spatial_flip_models/{fairness_notion}/iter.pkl"
-    )
