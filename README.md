@@ -2,8 +2,18 @@
 
 This repository contains the official code for the paper titled **PROMIS: PROcessing MItigation of Spatial Bias**. 
 
+## Table of Contents
+
+- [Data Source and Download Information](#data-source-and-download-information)
+- [Experiments](#experiments)
+- [Main PROMIS Methods](#main-promis-methods)
+- [Analysis](#analysis)
+- [Example Use Cases of PROMIS](#example-use-cases-of-promis)
+- [Requirements and Setup](#requirements-and-setup)
+
 ---
-**Data Source and Download Information**
+
+## Data Source and Download Information
 
 The following datasets have been downloaded from their respective sources and stored in the data/datasets/ directory for reproducibility. Below are the details for each file:
 
