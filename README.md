@@ -1,4 +1,4 @@
-# PROMIS: PROcessing MItigation of Spatial Bias
+# PROMIS: Post-PROcessing MItigation of Spatial Bias
 
 This repository contains the official code for the paper titled **PROMIS: PROcessing MItigation of Spatial Bias**. 
 
