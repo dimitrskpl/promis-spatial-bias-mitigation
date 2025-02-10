@@ -97,8 +97,40 @@ Two additional notebooks demonstrate PROMIS under different approaches:
 
 1. **Python Version**  
    This codebase uses **Python 3.10.12**.
+   
+2. **Gurobi License**\
+   PROMIS utilizes the Gurobi solver for optimization tasks.\
+   A valid Gurobi license is required to avoid running in limited edition mode.\
+   For academic users, a free Gurobi license is available. Please follow the instructions on the [Gurobi Academic License page](https://www.gurobi.com/features/academic-wls-license/) to obtain and install your license.\
+   Ensure that your Gurobi environment is correctly set up.\
+   Usefull links:
+   * [How do I obtain a free academic license?](https://support.gurobi.com/hc/en-us/articles/360040541251-How-do-I-obtain-a-free-academic-license)
+   * [How do I retrieve and set up a Gurobi license?](https://support.gurobi.com/hc/en-us/articles/12872879801105-How-do-I-retrieve-and-set-up-a-Gurobi-license)
+   * [Where do I place the Gurobi license file (gurobi.lic)?](https://support.gurobi.com/hc/en-us/articles/360013417211-Where-do-I-place-the-Gurobi-license-file-gurobi-lic)
 
-2. **Install Dependencies**  
+3. **Create and Activate a Virtual Environment (venv)**\
+   It is recommended to create a virtual environment to manage dependencies. You can do so using the following commands:
+   ```bash
+   # Create a virtual environment named 'env'
+   python -m venv env
+   
+   # Activate the virtual environment (Linux/macOS)
+   source env/bin/activate
+   
+   # For Windows, use:
+   env\Scripts\activate
+   ```
+   
+4. **Install Dependencies**\
+   With the virtual environment activated, install the required packages:
    ```bash
    pip install -r requirements.txt
-
+   ```
+   
+5. **Set Up the Virtual Environment as the Jupyter Notebook Kernel**\
+   To ensure that your notebooks use the correct environment, install the ipykernel package and add the environment as a kernel:
+   ```bash
+   pip install ipykernel
+   python -m ipykernel install --user --name=promis-env --display-name="PROMIS Env"
+   ```
+   Then, when you open a notebook, select "PROMIS Env" as the kernel.
