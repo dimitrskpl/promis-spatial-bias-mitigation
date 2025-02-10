@@ -3,7 +3,12 @@
 # the desired lines in the partioning_type_names list.
 # You can also opt to run on specific PROMIS method by commenting/uncommenting the
 # the desired lines in the promis_methods list.
+"""
+For each experiment the directory xgb_eq_opp_exp/regions_\<partitioning_name>|pred_xgb_crime is created.
 
+Inside the directory the following files are created:
+    * spatial_optim/equal_opportunity_<promis_method_name>.pkl (for promis_opt method the wlimit_\<work_limit> is appended)
+"""
 
 import os
 import sys
@@ -17,7 +22,7 @@ import pandas as pd
 
 
 base_path = "../../data/"
-results_base_path = "../../test_results/xgb_eq_opp_exp/"
+results_base_path = "../../results/xgb_eq_opp_exp/"
 n_flips_start = 500
 n_flips = 3500
 step = 500

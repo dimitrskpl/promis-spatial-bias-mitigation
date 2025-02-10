@@ -5,7 +5,12 @@
 # You can also opt to run on specific PROMIS method by commenting/uncommenting the
 # the desired lines in the promis_methods list.
 
+"""
+For this experiment the directory lar_exp/regions_\<partitioning_name>|pred__crime is created.
 
+Inside the directory the following files are created:
+* spatial_optim/statistical_parity/promis_opt_wlimit_<work_limit>.pkl
+"""
 import os
 import sys
 

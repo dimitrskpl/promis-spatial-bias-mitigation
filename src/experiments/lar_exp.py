@@ -5,6 +5,16 @@
 # the desired lines in the partioning_type_names list.
 # You can also opt to run on specific PROMIS method by commenting/uncommenting the
 # the desired lines in the promis_methods list.
+"""
+For each experiment the directory lar_exp/regions_\<partitioning_name>|pred__crime is created.
+
+Inside the directory the following files are created:
+
+* for SpatialFlip:
+    * spatial_flip_models/\<fairness_notion>_iter.pkl
+* for PROMIS:
+    * spatial_optim/statistical_parity_<promis_method_name>.pkl (for promis_opt method the wlimit_\<work_limit> is appended)
+"""
 
 import os
 import sys
