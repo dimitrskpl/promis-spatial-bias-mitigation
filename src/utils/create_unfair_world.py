@@ -89,6 +89,11 @@ def create_unfair_world(
     df_fair = test_pred_df.copy()
     fair_y_pred = gen_y_pred(df_fair.shape[0], rho, seed=seed)
     df_fair["pred"] = fair_y_pred
+    df_fair.to_csv(
+        f"{predictions_path}test_fair_pred_semi_synthetic_{partioning_name}.csv",
+        index=False,
+    )
+
     N_fair, P_fair = get_stats(df_fair, "pred")
     print(
         f"Stats with generation of true types with binomial of rho {rho} making the world unfair:"
