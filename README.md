@@ -128,9 +128,8 @@ Two additional notebooks demonstrate PROMIS under different approaches:
    ```
    
 5. **Set Up the Virtual Environment as the Jupyter Notebook Kernel**\
-   To ensure that your notebooks use the correct environment, install the ipykernel package and add the environment as a kernel:
+   To ensure that your notebooks use the correct environment, add the environment as a kernel:
    ```bash
-   pip install ipykernel
    python -m ipykernel install --user --name=promis-env --display-name="PROMIS Env"
    ```
    Then, when you open a notebook, select "PROMIS Env" as the kernel.
