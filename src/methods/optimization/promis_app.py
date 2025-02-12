@@ -27,8 +27,8 @@ def minimize_promis_app_obj(
         wlimit (int, optional): Work limit for Gurobi optimization. Defaults to None.
         no_of_threads (int, optional): Number of threads for parallel computation. Defaults to 0.
         non_convex_param (int, optional): Parameter for handling non-convexity in optimization. Defaults to 0.
-        min_pr (float, optional): Minimum proportion constraint for fairness. Defaults to None.
-        max_pr (float, optional): Maximum proportion constraint for fairness. Defaults to None.
+        min_pr (float, optional): Minimum positive rate constraint. Defaults to None.
+        max_pr (float, optional): Maximum positive rate constraint. Defaults to None.
         cont_sol (bool, optional): Whether to use continuous (True) or integer (False) optimization. Defaults to True.
 
     Returns:
@@ -213,8 +213,8 @@ def minimize_promis_app_obj_overlap(
         no_of_threads (int, optional): Number of threads for parallel computation. Defaults to 0.
         non_convex_param (int, optional): Parameter for handling non-convexity in optimization. Defaults to 0.
         weights (list, optional): List of weights for different regions. Defaults to None.
-        min_pr (float, optional): Minimum proportion constraint for fairness. Defaults to None.
-        max_pr (float, optional): Maximum proportion constraint for fairness. Defaults to None.
+        min_pr (float, optional): Minimum positive rate constraint. Defaults to None.
+        max_pr (float, optional): Maximum positive rate constraint. Defaults to None.
         cont_sol (bool, optional): Whether to use continuous (True) or integer (False) optimization. Defaults to True.
 
     Returns:

@@ -32,8 +32,8 @@ def minimize_promis_opt_obj(
         wlimit (float, optional): Work limit for the optimization solver.
         no_of_threads (int, optional): Number of threads to use for Gurobi optimization.
         best_obj_stop (float, optional): Stopping criteria based on objective function value.
-        min_pr (float, optional): Minimum probability ratio constraint.
-        max_pr (float, optional): Maximum probability ratio constraint.
+        min_pr (float, optional): Minimum positive rate constraint.
+        max_pr (float, optional): Maximum positive rate constraint.
         cont_sol (bool, optional): If True, uses continuous variables; otherwise, uses integer variables.
 
     Returns:
@@ -49,10 +49,6 @@ def minimize_promis_opt_obj(
 
     Raises:
         ValueError: If `min_pr` is equal to `max_pr` and `C` is not an even number.
-
-    Notes:
-        - This function models a fairness-constrained optimization problem with probabilistic regions.
-        - Uses Gurobis logarithmic constraints for statistical calculations.
     """
 
     if min_pr is not None and min_pr == max_pr and C % 2 != 0:
@@ -304,8 +300,8 @@ def minimize_promis_opt_obj_overlap(
         wlimit (float, optional): Work limit for the optimization solver.
         no_of_threads (int, optional): Number of threads to use for Gurobi optimization.
         best_obj_stop (float, optional): Stopping criteria based on objective function value.
-        min_pr (float, optional): Minimum probability ratio constraint.
-        max_pr (float, optional): Maximum probability ratio constraint.
+        min_pr (float, optional): Minimum positive rate constraint.
+        max_pr (float, optional): Maximum positive rate constraint.
         cont_sol (bool, optional): If True, uses continuous variables; otherwise, uses integer variables.
 
     Returns:
@@ -321,10 +317,6 @@ def minimize_promis_opt_obj_overlap(
 
     Raises:
         ValueError: If `min_pr` is equal to `max_pr` and `C` is not an even number.
-
-    Notes:
-        - Uses Gurobi's `log` constraints for probability-related calculations.
-        - If `C` is specified, limits the total number of label flips.
     """
 
     if min_pr is not None and min_pr == max_pr and C % 2 != 0:
