@@ -90,14 +90,14 @@ def read_all_models(folder_path, optim_methods, methods=[]):
         if optim_methods:
             model = SpatialOptimFairnessModel.from_pretrained(f"{folder_path}{file}")
             if methods:
-                if model.method in methods:
+                if method_name in methods:
                     methods_2_models[method_name] = model
             else:
                 methods_2_models[method_name] = model
         else:
             model = SpatialFlipFairnessModel.from_pretrained(f"{folder_path}{file}")
             if methods:
-                if model.method in methods:
+                if method_name in methods:
                     methods_2_models[method_name] = model
             else:
                 methods_2_models[method_name] = model
