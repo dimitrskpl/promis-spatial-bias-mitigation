@@ -35,7 +35,6 @@ n_flips = 15000
 step = 3000
 iter_flips_range = list(range(n_flips_start, n_flips + step, step))
 no_of_threads = 0
-wlimit = 300  # working limit
 clf_name = ""
 dataset_name = "lar"
 partioning_type_names = [
@@ -46,9 +45,10 @@ partioning_type_names = [
 fairness_notion = "statistical_parity"
 
 promis_methods = [
-    "promis_app",
-    "promis_opt",
-]
+    ("promis_app", 300),
+    ("promis_opt", 300),
+    ("promis_opt", 1800),
+]  # [(promis_method_name, working_limit)]
 
 
 max_pr_shift = 0.1
@@ -71,7 +71,7 @@ for partioning_type_name, overlap in partioning_type_names:
 
     print(f"{clf_name}, {partioning_type_name}, {fairness_notion}")
 
-    for method in promis_methods:
+    for method, wlimit in promis_methods:
         fair_model = SpatialOptimFairnessModel(method)
         fair_model.multi_fit(
             points_per_region=points_per_region,

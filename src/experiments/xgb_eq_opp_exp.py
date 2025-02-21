@@ -26,6 +26,7 @@ results_base_path = "../../results/xgb_eq_opp_exp/"
 n_flips_start = 500
 n_flips = 3500
 step = 500
+wlimit = 300
 iter_flips_range = list(range(n_flips_start, n_flips + step, step))
 no_of_threads = 0
 clf_names = ["xgb"]
@@ -38,10 +39,9 @@ partioning_type_names = [
 fairness_notion = "equal_opportunity"
 
 promis_methods = [
-    ("promis_app", 300),
-    ("promis_opt", 300),
-    ("promis_opt", 1800),
-]  # [(promis_method_name, working_limit)]
+    "promis_app",
+    "promis_opt",
+]
 
 max_pr_shift = 0.1
 results = {}
@@ -75,7 +75,7 @@ for clf_name in clf_names:
 
         print(f"{clf_name}, {partioning_type_name}, {fairness_notion}")
 
-        for optim_method, wlimit in promis_methods:
+        for optim_method in promis_methods:
             fair_model = SpatialOptimFairnessModel(optim_method)
             fair_model.multi_fit(
                 points_per_region=val_points_per_region,
