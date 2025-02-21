@@ -108,7 +108,26 @@ Two additional notebooks demonstrate PROMIS under different approaches:
    * [How do I retrieve and set up a Gurobi license?](https://support.gurobi.com/hc/en-us/articles/12872879801105-How-do-I-retrieve-and-set-up-a-Gurobi-license)
    * [Where do I place the Gurobi license file (gurobi.lic)?](https://support.gurobi.com/hc/en-us/articles/360013417211-Where-do-I-place-the-Gurobi-license-file-gurobi-lic)
 
-3. **Create and Activate a Virtual Environment (venv)**\
+3. **Git LFS (version >= 2.0)**\
+   You must have Git LFS installed and configured before cloning or pulling large files.
+   * On Ubuntu/Debian: sudo apt-get install git-lfs
+   * On macOS (Homebrew): brew install git-lfs
+   * Via conda: conda install -c conda-forge git-lfs
+   After installing, run:
+   ```bash
+   git lfs install
+   ```
+   
+4. **Clone the Repository and Pull LFS Files**\
+   Clone and pull the LFS-tracked files:
+   ```bash
+   git clone <REPO_URL>
+   cd <REPO_FOLDER>
+   
+   git lfs pull
+   ```
+
+5. **Create and Activate a Virtual Environment (venv)**\
    It is recommended to create a virtual environment to manage dependencies. You can do so using the following commands:
    ```bash
    # Create a virtual environment named 'promis-env'
@@ -121,13 +140,13 @@ Two additional notebooks demonstrate PROMIS under different approaches:
    promis-env\Scripts\activate
    ```
    
-4. **Install Dependencies**\
-   With the virtual environment activated, install the required packages:
+6. **Install Dependencies**\
+   With the virtual environment activated, install the required packages found in `src/requirements.txt`:
    ```bash
    pip install -r requirements.txt
    ```
    
-5. **Set Up the Virtual Environment as the Jupyter Notebook Kernel**\
+7. **Set Up the Virtual Environment as the Jupyter Notebook Kernel**\
    To ensure that your notebooks use the correct environment, add the environment as a kernel:
    ```bash
    python -m ipykernel install --user --name=promis-env --display-name="PROMIS Env"
