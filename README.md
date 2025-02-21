@@ -111,14 +111,14 @@ Two additional notebooks demonstrate PROMIS under different approaches:
 3. **Create and Activate a Virtual Environment (venv)**\
    It is recommended to create a virtual environment to manage dependencies. You can do so using the following commands:
    ```bash
-   # Create a virtual environment named 'env'
-   python -m venv env
+   # Create a virtual environment named 'promis-env'
+   python -m venv promis-env
    
    # Activate the virtual environment (Linux/macOS)
-   source env/bin/activate
+   source promis-env/bin/activate
    
    # For Windows, use:
-   env\Scripts\activate
+   promis-env\Scripts\activate
    ```
    
 4. **Install Dependencies**\
