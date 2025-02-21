@@ -141,7 +141,7 @@ Two additional notebooks demonstrate PROMIS under different approaches:
    ```
    
 6. **Install Dependencies**\
-   With the virtual environment activated, install the required packages:
+   With the virtual environment activated, install the required packages found in `src/requirements.txt`:
    ```bash
    pip install -r requirements.txt
    ```
