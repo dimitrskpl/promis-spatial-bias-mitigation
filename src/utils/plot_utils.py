@@ -41,8 +41,6 @@ def plot_fairness_map(
     mapit = folium.Map(
         location=center_loc,
         zoom_start=10,
-        tiles="Cartodb Positron",  # "StamenToner",
-        # attr="Stamen Toner",
     )
 
     for regs_df in regs_df_list:
@@ -56,14 +54,12 @@ def plot_fairness_map(
             hex_color = colors.to_hex(rgba_color)
 
             folium.Polygon(
-                locations=[
-                    (lat, lon) for lon, lat in polygon
-                ],  # note order: (lat, lon)
-                color="white",
+                locations=[(lat, lon) for lon, lat in polygon],
+                color="black",
                 fill=True,
                 fill_opacity=0.9,
                 fill_color=hex_color,
-                weight=1,
+                weight=2,
                 tooltip=(f"Fairness metric: {score:.2f}"),
             ).add_to(mapit)
 
@@ -110,6 +106,15 @@ def plot_fairness_map(
 
     mapit.get_root().html.add_child(folium.Element(legend_html))
 
+    css = f"""
+    <style>
+        .leaflet-tile {{
+            filter: brightness({0.5:.2f});
+        }}
+    </style>
+    """
+    mapit.get_root().html.add_child(folium.Element(css))
+
     return mapit
 
 
@@ -141,14 +146,13 @@ def plot_map_with_polygons(
     mapit = folium.Map(
         location=center_loc,
         zoom_start=10,
-        tiles="Cartodb Positron",
     )
     # Add points
     if y_pred is not None:
         indices = df.index
         shuffled_indices = np.random.permutation(indices)
         for index in shuffled_indices:
-            color = "#00FF00" if y_pred[index] == 1 else "#FF0000"
+            color = "green" if y_pred[index] == 1 else "#FF0000"
             folium.CircleMarker(
                 location=(df.at[index, "lat"], df.at[index, "lon"]),
                 color=color,
@@ -185,7 +189,7 @@ def plot_map_with_polygons(
                 if polygon:
                     folium.Polygon(
                         locations=[(lat, lon) for lon, lat in polygon],
-                        color=regs_color,
+                        color="black",
                         fill=True,
                         fill_color=regs_color,
                         fill_opacity=0,
@@ -198,6 +202,15 @@ def plot_map_with_polygons(
         <h3 align="center" style="font-size:20px"><b>{title}</b></h3>
         """
         mapit.get_root().html.add_child(folium.Element(title_html))
+
+    css = f"""
+    <style>
+        .leaflet-tile {{
+            filter: brightness({0.5:.2f});
+        }}
+    </style>
+    """
+    mapit.get_root().html.add_child(folium.Element(css))
 
     return mapit
 
