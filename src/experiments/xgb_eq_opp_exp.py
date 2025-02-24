@@ -1,8 +1,8 @@
 # this script is used to run the experiments on crime dataset with equal opportunity fairness notion
 # You can also opt to run on specific audit regions by commenting/uncommenting the
-# the desired lines in the partioning_type_names list.
+# desired lines in the partioning_type_names list.
 # You can also opt to run on specific PROMIS method by commenting/uncommenting the
-# the desired lines in the promis_methods list.
+# desired lines in the promis_methods list.
 """
 For each experiment the directory xgb_eq_opp_exp/regions_\<partitioning_name>|pred_xgb_crime is created.
 
@@ -32,9 +32,9 @@ no_of_threads = 0
 clf_names = ["xgb"]
 dataset_name = "crime"
 partioning_type_names = [
-    ("overlap_k_10_radii_4", True),
-    ("non_overlap_k_8", False),
-    ("5_x_5", True),
+    ("overlap_k_10_radii_4", True),  # Audit Regions = Scan Regions
+    ("non_overlap_k_8", False),  # Audit Regions = Clusters
+    ("5_x_5", True),  # Audit Regions = Grids
 ]  # [(partioning_name, is overlapping partitioning?)]
 fairness_notion = "equal_opportunity"
 

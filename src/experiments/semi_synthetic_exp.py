@@ -1,8 +1,8 @@
 # this script is used to run the experiments on the semi-synthetic crime dataset
 # You may opt to run on specific audit regions by commenting/uncommenting the
-# the desired lines in the partioning_type_names list.
+# desired lines in the partioning_type_names list.
 # You can also opt to run on specific PROMIS method by commenting/uncommenting the
-# the desired lines in the promis_methods list.
+# desired lines in the promis_methods list.
 """
 regions_non_overlap_k_8_crime|pred_semi_synthetic_regions_non_overlap_k_8_crime
 For each experiment the directory crime_semi_synth_exp/regions_\<partitioning_name>|pred_semi_synthetic_regions_<partitioning_name>_crime is created.
@@ -33,9 +33,9 @@ wlimit = 300  # working limit
 clf_name = "semi_synthetic"
 dataset_name = "crime"
 partioning_type_names = [
-    ("non_overlap_k_8", False),
-    ("5_x_5", True),
-    ("overlap_k_10_radii_4", True),
+    ("non_overlap_k_8", False),  # Audit Regions = Clusters
+    ("5_x_5", True),  # Audit Regions = Grids
+    ("overlap_k_10_radii_4", True),  # Audit Regions = Scan Regions
 ]  # [(partioning_name, is overlapping partitioning?)]
 fairness_notion = "statistical_parity"
 
