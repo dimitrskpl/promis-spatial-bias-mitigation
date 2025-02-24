@@ -35,7 +35,7 @@ The following datasets have been downloaded from their respective sources and st
 
 1. **Creating Worlds (Datasets)**
    - Notebook: `src/create_worlds.ipynb`  
-   - Description: Preprocesses datasets, fits an XGBoost model, and creates the audit regions and the semi-synthetic dataset.  
+   - Description: Preprocesses datasets, fits XGBoost and DNN models, and creates the audit regions and the semi-synthetic dataset.  
    **Important**: Please run this notebook first to ensure all necessary data and models are set up correctly. 
 2. **Audit Experiment**
    - Notebook: `src/experiments/audit_exp.ipynb`  
@@ -47,11 +47,7 @@ The following datasets have been downloaded from their respective sources and st
 
 4. **LAR Dataset Experiment**
    - Script: `src/experiments/lar_exp.py`  
-   - Description: Experiments with the LAR dataset.
-
-5. **PROMIS Opt (High Work Limit) on LAR Dataset**
-   - Script: `src/experiments/promis_opt_high_wlimit_lar_exp.py`  
-   - Description: Experiment with the LAR dataset using the PROMIS Opt method with a higher work limit.
+   - Description: Experiments with the LAR dataset including PROMIS Opt with a higher work limit.
 
 6. **Unfair-by-Design (Semi-synthetic) Experiment**
    - Script: `src/experiments/semi_synthetic_exp.py`  
@@ -61,7 +57,7 @@ The following datasets have been downloaded from their respective sources and st
    - Script: `src/experiments/xgb_eq_opp_exp.py`  
    - Description: Experiments using XGBoost.
 
-**Note**: Results from the experiments (except for the audit experiment) are automatically saved for later analysis.
+**Note**: At the start of each script/notebook of the experiments you may find additional documentation. Results from the experiments (except for the audit experiment) are automatically saved for later analysis.
 
 ---
 
