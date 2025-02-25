@@ -15,7 +15,7 @@ This repository contains the official code for the paper titled **PROMIS: PROces
 
 ## Data Source and Download Information
 
-The following datasets have been downloaded from their respective sources and stored in the data/datasets/ directory for reproducibility. Below are the details for each file:
+The following datasets have been downloaded from their respective sources compressed into a single archive located at `data/datasets/datasets.zip` for reproducibility. Below are the details for each file:
 
 * CRIME Dataset
     * Source: [Crime Data from 2010 to 2019](<https://data.lacity.org/Public-Safety/Crime-Data-from-2010-to-2019/63jg-8b9z>)
@@ -28,8 +28,6 @@ The following datasets have been downloaded from their respective sources and st
     * Source: [Census Gazetteer Files 2021](<https://www.census.gov/geographies/reference-files/time-series/geo/gazetteer-files.2021.html>)
     * The file was obtained by navigating to the "Census Tracts" section and clicking on "Download the National Census Tracts Gazetteer Files."
  
-All datasets are compressed into a single archive located at `data/datasets/datasets.zip`
-
 ---
 
 ## Experiments
