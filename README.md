@@ -20,15 +20,16 @@ The following datasets have been downloaded from their respective sources and st
 * CRIME Dataset
     * Source: [Crime Data from 2010 to 2019](<https://data.lacity.org/Public-Safety/Crime-Data-from-2010-to-2019/63jg-8b9z>)
     * Download Date: 10/1/2024
-    * The dataset is provided as a ZIP file and is updated monthly. For reproducibility, it was downloaded and saved as Crime_Data_from_2010_to_2019.csv.zip
+    * The dataset is updated monthly. 
 * LAR Dataset
     * Source: [CFPB Modified LAR Data 2021](<https://ffiec.cfpb.gov/data-publication/modified-lar/2021>)
     * The dataset for 2021 was obtained by, selecting the year 2021, entering the Legal Entity Identifier (LEI) B4TYDEB6GKMZO031MB27 for Bank of America, choosing the option "Include File Header." and clicking on "Download Modified LAR with Header."
-    * It was then saved as: B4TYDEB6GKMZO031MB27.csv.zip
 * Census Gazetteer Data
     * Source: [Census Gazetteer Files 2021](<https://www.census.gov/geographies/reference-files/time-series/geo/gazetteer-files.2021.html>)
     * The file was obtained by navigating to the "Census Tracts" section and clicking on "Download the National Census Tracts Gazetteer Files."
-    * It was saved as: 2021_Gaz_tracts_national.txt.zip
+ 
+All datasets are compressed into a single archive located at `data/datasets/datasets.zip`
+
 ---
 
 ## Experiments
@@ -76,7 +77,10 @@ The core PROMIS method implementations are located in:
 Use the following notebook for analyzing and comparing results:
 
 - `src/analysis/results_analysis.ipynb`  
-  This notebook includes code for inference, computation of scores, and generating plots.
+  This notebook includes code for inference, computation of scores, and generating plots. Additionally, it saves metrics for each method and experiment at the maximum budget in a CSV file for later analysis.
+
+- `src/analysis/max_budget_analysis.ipynb`  
+  This notebook contains code for displaying metrics related to the maximum budget across all experiments. Run it after completing all experiments.
 
 ---
 
