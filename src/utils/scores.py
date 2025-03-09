@@ -353,9 +353,11 @@ def get_mlr(labels, points_per_region, with_stats=False):
 
     for i in range(len(points_per_region)):
         n = len(points_per_region[i])
+        if n == 0:
+            continue
         p = np.sum(labels[points_per_region[i]])
-        stat_i = compute_statistic(n, p, N, P)
-        list_stats.append(stat_i)
+        _, l0, l1_i = compute_statistic_l0_l1(n, p, N, P)
+        list_stats.append(1 - l1_i / l0)
 
     mlr = np.mean(list_stats)
     if with_stats:
