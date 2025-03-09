@@ -376,3 +376,429 @@ def get_partionings_fairness_loss_all(
             )
 
     return np.array(fairness_loss_list)
+
+
+def compute_avg_disparity_where_metrics(
+    all_methods_to_results_info,
+    y_pred,
+    y_pred_where,
+    y_true,
+    points_per_region,
+    pos_points_per_region,
+    ids,
+    partitionings,
+    fair_score_func,
+    set_label="test",
+):
+    """
+    Computes disparity for all given predictions plus MLR and performance metrics for the "FairWhere" method's predictions.
+
+    Parameters:
+    - all_methods_to_results_info (dict): Dictionary mapping method names to DataFrames containing results.
+    - y_pred (array-like): Initial predictions for all samples.
+    - y_pred_where (array-like): Predictions computed by the "FairWhere" method.
+    - y_true (array-like): Ground truth labels.
+    - points_per_region (array-like): Number of points in each region.
+    - pos_points_per_region (array-like): Number of positive points in each region.
+    - ids (array-like): Identifiers for the partitionings.
+    - partitionings (array-like): Different partitioning schemes for fairness analysis.
+    - fair_score_func (function): Function used to compute fairness scores (statistical parity/equal opportunity).
+    - set_label (str, optional): Label for the dataset partition being evaluated (e.g., "test"). Defaults to "test".
+
+    Returns:
+    - tuple: Contains the following computed metrics:
+        - all_methods_to_results_info (dict): Updated dictionary with fairness loss values.
+        - P_where (int): Number of positive predictions in the subset.
+        - RHO_where (float): Ratio of positive predictions in the subset.
+        - TP_where (int): Number of true positive predictions in the subset.
+        - TPR_where (float): True positive rate for the subset.
+        - mlr_where_st_par (float): Mean likelihood ratio for statistical parity.
+        - mlr_where_eq_opp (float): Mean likelihood ratio for equal opportunity.
+        - acc_where (float): Accuracy of predictions in the subset.
+        - f1_where (float): F1-score of predictions in the subset.
+        - init_fairness_loss_list (list): Fairness loss for each partition without weighting.
+        - init_fairness_loss_list_weighted (list): Fairness loss for each partition with weighting.
+        - init_fairness_loss_sum (float): Summed fairness loss across partitions without weighting.
+        - init_fairness_loss_sum_weighted (float): Summed fairness loss across partitions with weighting.
+        - where_fairness_loss_list (list): Fairness loss for each partition in the evaluated subset (without weighting).
+        - where_fairness_loss_list_weighted (list): Fairness loss for each partition in the evaluated subset (with weighting).
+        - where_fairness_loss_sum (float): Summed fairness loss for the evaluated subset (without weighting).
+        - where_fairness_loss_weighted_sum (float): Summed fairness loss for the evaluated subset (with weighting).
+    """
+
+    pos_y_true_indices = np.where(y_true == 1)[0]
+
+    P_where = np.sum(y_pred_where)
+    N_where = len(y_pred_where)
+    RHO_where = P_where / N_where
+    TP_where = np.sum(y_pred_where[pos_y_true_indices])
+    TPR_where = TP_where / len(pos_y_true_indices)
+
+    # MLR
+    mlr_where_st_par = get_mlr(y_pred_where, points_per_region)
+    mlr_where_eq_opp = get_mlr(y_pred_where[pos_y_true_indices], pos_points_per_region)
+
+    # Accuracy
+    acc_where = metrics.accuracy_score(y_true, y_pred_where)
+    f1_where = metrics.f1_score(y_true, y_pred_where)
+
+    where_fairness_loss_list = get_partionings_fairness_loss_all(
+        y_pred_where,
+        ids,
+        partitionings,
+        y_true,
+        weighted=False,
+        score_func=fair_score_func,
+    )
+
+    where_fairness_loss_sum = np.sum(where_fairness_loss_list)
+
+    init_fairness_loss_list = get_partionings_fairness_loss_all(
+        y_pred,
+        ids,
+        partitionings,
+        y_true,
+        weighted=False,
+        score_func=fair_score_func,
+    )
+
+    init_fairness_loss_sum = np.sum(init_fairness_loss_list)
+
+    # fair loss score weighed per partitioning
+    where_fairness_loss_list_weighted = get_partionings_fairness_loss_all(
+        y_pred_where,
+        ids,
+        partitionings,
+        y_true,
+        weighted=True,
+        score_func=fair_score_func,
+    )
+
+    where_fairness_loss_weighted_sum = np.sum(where_fairness_loss_list_weighted)
+
+    init_fairness_loss_list_weighted = get_partionings_fairness_loss_all(
+        y_pred,
+        ids,
+        partitionings,
+        y_true,
+        weighted=True,
+        score_func=fair_score_func,
+    )
+
+    init_fairness_loss_sum_weighted = np.sum(init_fairness_loss_list_weighted)
+
+    for method, res_df in all_methods_to_results_info.items():
+        res_df[f"fair_loss_list_{set_label}"] = res_df[f"y_pred_{set_label}"].apply(
+            lambda x: get_partionings_fairness_loss_all(
+                x,
+                ids,
+                partitionings,
+                y_true,
+                weighted=False,
+                score_func=fair_score_func,
+            )
+        )
+
+        res_df[f"fair_loss_sum_{set_label}"] = res_df[
+            f"fair_loss_list_{set_label}"
+        ].apply(lambda x: np.sum(x))
+
+        res_df[f"fair_loss_list_weighted_{set_label}"] = res_df[
+            f"y_pred_{set_label}"
+        ].apply(
+            lambda x: get_partionings_fairness_loss_all(
+                x,
+                ids,
+                partitionings,
+                y_true,
+                weighted=True,
+                score_func=fair_score_func,
+            )
+        )
+
+        res_df[f"fair_loss_sum_weighted_{set_label}"] = res_df[
+            f"fair_loss_list_weighted_{set_label}"
+        ].apply(lambda x: np.sum(x))
+
+        all_methods_to_results_info[method] = res_df
+
+    return (
+        all_methods_to_results_info,
+        P_where,
+        RHO_where,
+        TP_where,
+        TPR_where,
+        mlr_where_st_par,
+        mlr_where_eq_opp,
+        acc_where,
+        f1_where,
+        init_fairness_loss_list,
+        init_fairness_loss_list_weighted,
+        init_fairness_loss_sum,
+        init_fairness_loss_sum_weighted,
+        where_fairness_loss_list,
+        where_fairness_loss_list_weighted,
+        where_fairness_loss_sum,
+        where_fairness_loss_weighted_sum,
+    )
+
+
+def get_audit_regions_name(x):
+    if "non_overlap" in x:
+        return "Non-Overlapping KMeans"
+    elif "overlap" in x:
+        return "Overlapping KMeans"
+    else:
+        return "Overlapping Partitionings"
+
+
+def get_clf_name(x):
+    if x == "dnn":
+        return "DNN"
+    elif x == "xgb":
+        return "XGB"
+    elif x.startswith("semi_synthetic"):
+        return "Unfair by Design"
+    else:
+        return "-"
+
+
+def compute_max_budget_info(
+    all_methods_to_results_info,
+    budget_range,
+    dataset_name,
+    clf_name,
+    partioning_type_name,
+    fairness_notion,
+    points_per_region,
+    init_mlr_st_par,
+    init_mlr_eq_opp,
+    init_stats_st_par,
+    init_stats_eq_opp,
+    where_fit_time,
+    y_pred_where,
+    y_true,
+    mlr_where_st_par,
+    mlr_where_eq_opp,
+    init_f1,
+    f1_where_test,
+    init_acc,
+    init_fairness_loss_sum,
+    where_fairness_loss_sum,
+):
+    """
+    Compute and compile final budget-based performance, fairness, and timing results into a pandas DataFrame.
+
+    This function aggregates results from different methods (passed as `all_methods_to_results_info`)
+    for a maximum budget of label flips, and appends those results along with initial and optional
+    "FairWhere" baseline outcomes to form a consolidated report. The report includes performance
+    metrics (accuracy or F1), fairness metrics (MLR and related statistics), total time taken,
+    and metadata describing the dataset, classifier, and fairness notion.
+
+    Args:
+        all_methods_to_results_info (dict):
+            A dictionary mapping method names (str) to pandas DataFrames of experiment results.
+            Each DataFrame must contain columns including at least:
+                - "budget": The number of flips used.
+                - "time": The time taken for the method when using a certain budget.
+                - "mlr_st_par_test" and/or "mlr_eq_opp_test": Measured MLR values for the final test set,
+                  depending on the fairness notion.
+                - "y_pred_test": The predicted labels on the test set.
+                - "fair_loss_sum_test": The sum of fairness losses on the test set (for DNN).
+                - "<performance_label>_test": The performance metric (e.g., F1 or accuracy) on the test set.
+        budget_range (list):
+            A list of possible budget values for label flipping. The maximum of this range
+            (i.e., `budget_range[-1]`) is used as the final budget in the report.
+        dataset_name (str):
+            Name of the dataset (e.g., "crime" or any other). Used to label the final DataFrame.
+        clf_name (str):
+            Name of the classifier (e.g., "dnn", "rf"). Determines which performance metric
+            is used (F1 for DNN, accuracy otherwise).
+        partioning_type_name (str):
+            The type of partitioning or region definition for the dataset. Used to label the
+            final DataFrame (via `get_audit_regions_name`).
+        fairness_notion (str):
+            The type of fairness metric used, either "statistical_parity" or "equal_opportunity".
+        points_per_region (list or np.ndarray):
+            A list or array indicating how many points fall into each region of interest
+            (used for calculating MLR).
+        init_mlr_st_par (float):
+            The initial (pre-flipping) MLR under statistical parity.
+        init_mlr_eq_opp (float):
+            The initial (pre-flipping) MLR under equal opportunity.
+        init_stats_st_par (float):
+            The initial (pre-flipping) statistics under statistical parity.
+        init_stats_eq_opp (float):
+            The initial (pre-flipping) statistics under equal opportunity.
+        where_fit_time (float):
+            The runtime taken by the "FairWhere" method (applicable only if `clf_name == "dnn"`).
+        y_pred_where (array-like):
+            The predictions from "FairWhere" on the test set (applicable only if `clf_name == "dnn"`).
+        y_true (array-like):
+            Ground truth labels for the test set. Used for measuring final performance metrics
+            if it is not None.
+        mlr_where_st_par (float):
+            The MLR achieved by "FairWhere" under statistical parity (if `clf_name == "dnn"`).
+        mlr_where_eq_opp (float):
+            The MLR achieved by "FairWhere" under equal opportunity (if `clf_name == "dnn"`).
+        init_f1 (float):
+            The initial F1 score prior to any flipping (applicable if `clf_name` starts with "dnn").
+        f1_where_test (float):
+            The F1 score achieved by "FairWhere" on the test set (if `clf_name == "dnn"`).
+        init_acc (float):
+            The initial accuracy score prior to any flipping (applicable if `clf_name` does not start with "dnn").
+        init_fairness_loss_sum (float):
+            The initial (pre-flipping) sum of fairness losses (used for DNN).
+        where_fairness_loss_sum (float):
+            The sum of fairness losses after applying "FairWhere" (used for DNN).
+
+    Returns:
+        pandas.DataFrame:
+            A DataFrame containing the compiled results. Columns include:
+
+            - "Budget": The budget values used (0 for the initial, and maximum budget for each method).
+            - "Method": The names of the methods (plus an "init" row for the initial state, and
+              optional "FairWhere" row if `clf_name` is "dnn").
+            - "Time": The time taken for each method at the max budget (and None for the initial row).
+            - "Accuracy": The accuracy scores (or None if classifier is DNN).
+            - "F1": The F1 scores (or None if classifier is not DNN).
+            - "MLR": The final measured MLR for each method at max budget (and the initial value).
+            - "Statistics": Supporting statistics for the MLR calculation per method.
+            - "Mean Disparity": The fairness loss sums (if classifier is DNN), else None.
+            - "Dataset": The dataset name (e.g., "Crime" or "LAR").
+            - "Classifier": Human-readable classifier name (derived from `clf_name` via `get_clf_name`).
+            - "Audit Regions": A label describing the partitioning, derived from `partioning_type_name`.
+            - "Fairness Notion": A label describing the fairness notion used."
+    """
+
+    pos_y_true_indices, pos_points_per_region = get_pos_info_regions(
+        y_true, points_per_region
+    )
+    methods = ["init"]
+    final_mlrs_st_par_test = [init_mlr_st_par]
+    final_mlrs_eq_opp_test = [init_mlr_eq_opp]
+    final_times = [None]
+    n_flips_ = budget_range[-1]
+    budget_list = [0] + [n_flips_] * len(all_methods_to_results_info)
+    final_stats_st_par_test_list = [init_stats_st_par]
+    final_stats_eq_opp_test_list = [init_stats_eq_opp]
+    final_performance_label = "f1" if clf_name.startswith("dnn") else "accuracy"
+    final_performance_test_list = (
+        [init_f1] if clf_name.startswith("dnn") else [init_acc]
+    )
+    final_fair_score_test_list = [init_fairness_loss_sum]
+    for method, exp_res_df in all_methods_to_results_info.items():
+        if fairness_notion == "statistical_parity":
+            mlr_st_par_test = exp_res_df[exp_res_df["budget"] == n_flips_][
+                "mlr_st_par_test"
+            ].tolist()[0]
+            final_mlrs_st_par_test.append(mlr_st_par_test)
+            y_test_pred = exp_res_df[exp_res_df["budget"] == n_flips_][
+                "y_pred_test"
+            ].tolist()[0]
+            _, final_stats_st_par_test = get_mlr(
+                y_test_pred, points_per_region, with_stats=True
+            )
+            final_stats_st_par_test_list.append(final_stats_st_par_test)
+            if clf_name.startswith("dnn"):
+                final_fair_score_test_list.append(
+                    exp_res_df[exp_res_df["budget"] == n_flips_][
+                        "fair_loss_sum_test"
+                    ].tolist()[0]
+                )
+        else:
+            mlr_eq_opp_test = exp_res_df[exp_res_df["budget"] == n_flips_][
+                "mlr_eq_opp_test"
+            ].tolist()[0]
+            y_test_pred = exp_res_df[exp_res_df["budget"] == n_flips_][
+                "y_pred_test"
+            ].tolist()[0]
+            y_test_pred_pos = y_test_pred[pos_y_true_indices]
+            _, final_stats_eq_opp_test = get_mlr(
+                y_test_pred_pos, pos_points_per_region, with_stats=True
+            )
+            final_stats_eq_opp_test_list.append(final_stats_eq_opp_test)
+
+            if clf_name.startswith("dnn"):
+                final_fair_score_test_list.append(
+                    exp_res_df[exp_res_df["budget"] == n_flips_][
+                        "fair_loss_sum_test"
+                    ].tolist()[0]
+                )
+
+        final_flip_time = exp_res_df[exp_res_df["budget"] == n_flips_]["time"].tolist()[
+            0
+        ]
+        final_times.append(final_flip_time)
+        methods.append(method)
+        if y_true is not None:
+            final_performance_test_list.append(
+                exp_res_df[exp_res_df["budget"] == n_flips_][
+                    f"{final_performance_label}_test"
+                ].tolist()[0]
+            )
+        else:
+            final_performance_test_list.append(None)
+
+        if fairness_notion == "equal_opportunity":
+            final_mlrs_eq_opp_test.append(mlr_eq_opp_test)
+
+    final_results = {
+        "Budget": budget_list,
+        "Method": methods,
+        "Time": final_times,
+    }
+    if final_performance_label == "f1":
+        final_results["Accuracy"] = [None] * len(final_performance_test_list)
+        final_results["F1"] = final_performance_test_list
+    else:
+        final_results["Accuracy"] = final_performance_test_list
+        final_results["F1"] = [None] * len(final_performance_test_list)
+
+    if fairness_notion == "statistical_parity":
+        final_results["MLR"] = final_mlrs_st_par_test
+        final_results["Statistics"] = final_stats_st_par_test_list
+    else:
+        final_results["MLR"] = final_mlrs_eq_opp_test
+        final_results["Statistics"] = final_stats_eq_opp_test_list
+
+    if clf_name == "dnn":
+        final_results["Method"].append("FairWhere")
+        final_results["Budget"].append(n_flips_)
+        final_results["Time"].append(where_fit_time)
+        final_results["F1"].append(f1_where_test)
+        final_results["Accuracy"].append(None)
+        if fairness_notion == "statistical_parity":
+            final_results["MLR"].append(mlr_where_st_par)
+            _, final_stats_st_par_test = get_mlr(
+                y_pred_where, points_per_region, with_stats=True
+            )
+            final_results["Statistics"].append(final_stats_st_par_test)
+            final_fair_score_test_list.append(where_fairness_loss_sum)
+            final_results["Mean Disparity"] = final_fair_score_test_list
+
+        else:
+            final_results["MLR"].append(mlr_where_eq_opp)
+            _, final_stats_eq_opp_test = get_mlr(
+                y_pred_where[pos_y_true_indices],
+                pos_points_per_region,
+                with_stats=True,
+            )
+            final_results["Statistics"].append(final_stats_eq_opp_test)
+            final_fair_score_test_list.append(where_fairness_loss_sum)
+            final_results["Mean Disparity"] = final_fair_score_test_list
+    else:
+        final_results["Mean Disparity"] = [None] * len(final_performance_test_list)
+
+    final_results["Dataset"] = "Crime" if dataset_name == "crime" else "LAR"
+    final_results["Classifier"] = get_clf_name(clf_name)
+    final_results["Audit Regions"] = get_audit_regions_name(partioning_type_name)
+    final_results["Fairness Notion"] = (
+        "Statistical Parity"
+        if fairness_notion == "statistical_parity"
+        else "Equal Opportunity"
+    )
+
+    final_results_df = pd.DataFrame(final_results)
+
+    return final_results_df
