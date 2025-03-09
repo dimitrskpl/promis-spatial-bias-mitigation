@@ -228,7 +228,6 @@ def plot_graphs(
     linewidths=None,
     linestyles=None,
     markers=None,
-    bold_labels=[],
     x_sticks_step=None,
     scatter_plot=False,
     rev_xaxis=False,
@@ -237,9 +236,14 @@ def plot_graphs(
     axhline_label=None,
     annotate_points=None,
     marker_sizes=None,
+    line_plot=True,
+    plot_legend=True,
+    show_plot=True,
+    ax=None,
+    zorders=None,
 ):
     """
-    Plots line or scatter graphs for multiple data series with customizable styles.
+    Plots multiple data series with customizable line styles, widths, and markers
 
     Args:
         values_lists (list of lists): List of y-values for multiple data series.
@@ -263,17 +267,17 @@ def plot_graphs(
         axhline_label (str, optional): Label for the horizontal reference line. Defaults to None.
         annotate_points (list, optional): List of dictionaries containing annotations for specific points. Defaults to None.
         marker_sizes (list, optional): Sizes for scatter markers. Defaults to None (set to 150).
-
-    Raises:
-        ValueError: If the length of `values_lists`, `colors`, and `labels` are not the same.
+        line_plot (bool, optional): If True, plots lines. Defaults to True.
+        plot_legend (bool, optional): If True, displays the legend. Defaults to True.
+        show_plot (bool, optional): If True, displays the plot. Defaults to True.
+        ax (matplotlib.axes.Axes, optional): Axes to plot on. Defaults to None.
+        zorders (list, optional): Z-orders for each series. Defaults to None (set to 2).
 
     Functionality:
-        - Plots multiple data series with customizable line styles, widths, and markers.
         - Supports both line and scatter plots.
         - Allows setting x-axis tick steps and reversing the x-axis.
         - Provides an option to add a horizontal reference line.
         - Saves the figure if `save_path` is provided.
-
     """
 
     if len(values_lists) != len(colors) or len(values_lists) != len(labels):
@@ -281,7 +285,7 @@ def plot_graphs(
             "values_lists size should be same as colors size and labels size"
         )
 
-    fig, ax = plt.subplots(figsize=figsize)
+    _, ax = plt.subplots(figsize=figsize) if ax is None else (None, ax)
 
     if linewidths is None:
         linewidths = [3] * len(colors)
@@ -295,43 +299,49 @@ def plot_graphs(
     if marker_sizes is None:
         marker_sizes = [150] * len(colors)
 
-    if x_values:
-        for i in range(len(values_lists)):
-            ax.plot(
-                x_values[i],
-                values_lists[i],
-                label=labels[i],
-                color=colors[i],
-                linewidth=linewidths[i],
-                linestyle=linestyles[i],
-                marker=markers[i],
-            )
+    zorders = [2] * len(values_lists) if zorders is None else zorders
 
-        if x_sticks_step:
-            min_x = min(min(x) for x in x_values)  # Get the smallest x-value
-            max_x = max(max(x) for x in x_values)  # Get the largest x-value
-            ax.set_xticks(np.arange(min_x, max_x + 1, x_sticks_step))
-
-        if scatter_plot:
-            if scatter_markers == None:
-                scatter_markers = ["o"] * len(values_lists)
+    if line_plot:
+        if x_values:
             for i in range(len(values_lists)):
-                ax.scatter(
+                ax.plot(
                     x_values[i],
                     values_lists[i],
+                    label=labels[i],
                     color=colors[i],
-                    s=marker_sizes[i],
-                    marker=scatter_markers[i],
+                    linewidth=linewidths[i],
+                    linestyle=linestyles[i],
+                    marker=markers[i],
+                    zorder=zorders[i],
                 )
-    else:
+
+            if x_sticks_step:
+                min_x = min(min(x) for x in x_values)
+                max_x = max(max(x) for x in x_values)
+                ax.set_xticks(np.arange(min_x, max_x + 1, x_sticks_step))
+        else:
+            for i in range(len(values_lists)):
+                ax.plot(
+                    values_lists[i],
+                    label=labels[i],
+                    color=colors[i],
+                    linewidth=linewidths[i],
+                    linestyle=linestyles[i],
+                    marker=markers[i],
+                    zorder=zorders[i],
+                )
+    if scatter_plot:
+        if scatter_markers == None:
+            scatter_markers = ["o"] * len(values_lists)
         for i in range(len(values_lists)):
-            ax.plot(
+            ax.scatter(
+                x_values[i],
                 values_lists[i],
-                label=labels[i],
                 color=colors[i],
-                linewidth=linewidths[i],
-                linestyle=linestyles[i],
-                marker=markers[i],
+                s=marker_sizes[i],
+                marker=scatter_markers[i],
+                label=labels[i],
+                zorder=zorders[i],
             )
 
     if annotate_points:
@@ -339,19 +349,16 @@ def plot_graphs(
             series_idx = annotation["series_idx"]
             point_idx = annotation["point_idx"]
 
-            # Retrieve coordinates
             x_coord = x_values[series_idx][point_idx] if x_values else point_idx
             y_coord = values_lists[series_idx][point_idx]
 
-            # Custom text or coordinates as default
             text = annotation.get("text", f"({x_coord}, {y_coord})")
 
-            # Annotate the point
             ax.annotate(
                 text,
                 (x_coord, y_coord),
                 textcoords="offset points",
-                xytext=(0, 50),  # Offset the annotation slightly above the point
+                xytext=(0, 50),
                 ha="center",
                 fontsize=10,
                 arrowprops=dict(arrowstyle="->", lw=1),
@@ -361,18 +368,27 @@ def plot_graphs(
         ax.axhline(
             y=axhline,
             color="red",
-            linestyle="--",
+            linestyle="-",
             linewidth=linewidths[0],
             label=f"{axhline_label}",
         )
 
-    # legend = ax.legend(loc="best", handlelength=1.2, handletextpad=1.5)
-    # legend = ax.legend(loc="best", handlelength=3, handletextpad=2)
-    legend = ax.legend(loc="best", markerscale=1.2, handlelength=2.5, handletextpad=1.5)
+    if plot_legend:
+        unique_label_color_marker = list(zip(labels, colors, scatter_markers))
+        method_legend_handles = [
+            plt.Line2D(
+                [0], [0], marker=m, color="w", markerfacecolor=c, markersize=10, label=l
+            )
+            for (l, c, m) in sorted(unique_label_color_marker, key=lambda x: x[0])
+        ]
 
-    for text in legend.get_texts():
-        if text.get_text() in bold_labels:
-            text.set_fontweight("bold")  # Set the font weight to bold
+        ax.legend(
+            handles=method_legend_handles,
+            loc="best",
+            labelspacing=0.2,
+            handletextpad=0.1,
+            framealpha=0.5,
+        )
 
     ax.set_title(title)
     ax.set_xlabel(xlabel)
@@ -385,7 +401,10 @@ def plot_graphs(
     if save_path:
         plt.savefig(save_path, format="pdf", bbox_inches="tight", dpi=300)
 
-    plt.show()
+    if show_plot:
+        plt.show()
+
+    return ax
 
 
 def get_linewidths_colors(labels, method_to_plot_info):
@@ -470,7 +489,7 @@ def plot_opt_methods_status(
         if display_title:
             plt.title(title)
 
-        plt.xlabel("Number of Flips")
+        plt.xlabel("Maximum Number of Flips")
         plt.yticks([])
 
         plt.legend()
@@ -486,707 +505,16 @@ def plot_scores(
     init_mlr,
     method_to_plot_info,
     method_to_display_name,
-    opt_methods_display_labels,
     save_plots_path="",
-    exp_idx=None,
-    default_linestyle=False,
     figsize=(20, 8),
     flips_limit=None,
     optim_sols_only=False,
-    predefined_colors=[],
     append_to_title="",
     append_to_save="",
     score_label="mlr",
     display_title=True,
-    axhline_mlr=None,
-    axhline_mlr_label=None,
-):
-    """
-    Plots the M.L.R. (Modified Likelihood Ratio) drop comparison across different methods.
-
-    Args:
-        methods_to_res_info (dict): Dictionary where keys are method names and values are Pandas DataFrames
-            containing budgeted solutions and their respective scores.
-        init_mlr (float): The initial M.L.R. score before any flips.
-        method_to_plot_info (dict): Dictionary where keys are method names and values contain plotting information
-            such as color, linewidth, and linestyle.
-        method_to_display_name (dict): Dictionary mapping method names to their display names in the legend.
-        opt_methods_display_labels (list of str): List of method labels that should be bolded in the legend.
-        save_plots_path (str, optional): Directory path to save the plot. Defaults to "" (not saved).
-        exp_idx (int, optional): Experiment index to include in the title and filename. Defaults to None.
-        default_linestyle (bool, optional): If True, sets all line styles to solid (`"-"`). Defaults to False.
-        figsize (tuple, optional): Figure size for the plot. Defaults to (20, 8).
-        flips_limit (int, optional): Maximum number of flips to consider when plotting. Defaults to None (no limit).
-        optim_sols_only (bool, optional): If True, only considers solutions where the optimization status is 1
-            (indicating an optimal solution). Defaults to False.
-        predefined_colors (list, optional): List of predefined colors to use for the methods. Defaults to an empty list.
-        append_to_title (str, optional): Additional text to append to the plot title. Defaults to "".
-        append_to_save (str, optional): Additional text to append to the save filename. Defaults to "".
-        score_label (str, optional): Column name in the DataFrame that represents the score to plot. Defaults to "mlr".
-        display_title (bool, optional): Whether to display the plot title. Defaults to True.
-        axhline_mlr (float, optional): A horizontal reference line at this M.L.R. value. Defaults to None.
-        axhline_mlr_label (str, optional): Label for the horizontal reference line. Defaults to None.
-
-    Raises:
-        ValueError: If the number of predefined colors is less than the number of labels.
-
-    Functionality:
-        - Extracts M.L.R. values for each method from `methods_to_res_info`.
-        - Filters based on optimization status and flip budget constraints.
-        - Generates a line plot comparing M.L.R. drop across different methods.
-        - Allows for bold labeling of specific optimization methods.
-        - Saves the plot if `save_plots_path` is provided.
-
-    """
-
-    methods_mlrs = []
-
-    labels = []
-    budget_list = []
-    colors = []
-    linewidths = []
-    linestyles = []
-
-    for method, method_res_info_df in methods_to_res_info.items():
-        labels.append(method_to_display_name[method])
-        method_res_info_df_cp = method_res_info_df.copy()
-        if optim_sols_only and "status" in method_res_info_df_cp.columns:
-            method_res_info_df_cp = method_res_info_df_cp[
-                method_res_info_df_cp["status"] == 1
-            ]
-        if flips_limit:
-            method_res_info_df_cp = method_res_info_df_cp[
-                method_res_info_df_cp["budget"] <= flips_limit
-            ]
-        method_mlrs = [init_mlr] + method_res_info_df_cp[score_label].to_list()
-        methods_mlrs.append(method_mlrs)
-        method_budget = [0] + method_res_info_df_cp["budget"].to_list()
-        budget_list.append(method_budget)
-        colors.append(method_to_plot_info[method]["color"])
-        linewidths.append(method_to_plot_info[method]["linewidth"])
-        linestyles.append(method_to_plot_info[method]["linestyle"])
-    if default_linestyle:
-        linestyles = ["-"] * (len(labels))
-
-    if predefined_colors:
-        if len(labels) > len(predefined_colors):
-            raise ValueError("len(labels) > len(predefined_colors)")
-        colors = predefined_colors[: len(labels)]
-
-    values_lists = methods_mlrs
-
-    title = f"Strategies M.L.R drop comparison{append_to_title}"
-    if exp_idx is not None:
-        title = f"{title} exp_idx: {exp_idx}"
-    xlabel = "Number of flips"
-    ylabel = "M.L.R."
-    mlr_save_path = ""
-    if save_plots_path:
-        mlr_save_path = f"{save_plots_path}methods_mlr{append_to_save}.pdf"
-
-        if exp_idx is not None:
-            mlr_save_path = (
-                f"{save_plots_path}methods_mlr{append_to_save}_exp_idx_{exp_idx}.pdf"
-            )
-
-    bold_labels = [label for label in labels if label in opt_methods_display_labels]
-    plot_graphs(
-        values_lists=values_lists,
-        labels=labels,
-        xlabel=xlabel,
-        ylabel=ylabel,
-        colors=colors,
-        title=title if display_title else "",
-        save_path=mlr_save_path,
-        figsize=figsize,
-        linewidths=linewidths,
-        bold_labels=bold_labels,
-        x_values=budget_list,
-        linestyles=linestyles,
-        scatter_plot=True,
-        axhline=axhline_mlr,
-        axhline_label=axhline_mlr_label,
-    )
-
-
-def plot_multi_scores(
-    method_name,
-    res_df,
-    init_mlrs,
-    score_labels,
-    opt_methods_display_labels,
-    method_to_display_name,
-    colors_list,
-    save_plots_path="",
-    exp_idx=None,
-    figsize=(20, 8),
-    flips_limit=None,
-    optim_sols_only=False,
-    predefined_colors=[],
-    display_title=True,
-    append_to_save="",
-):
-    """
-    Plots multiple M.L.R. scores for a given method across different sets.
-
-    Args:
-        method_name (str): The name of the method being plotted.
-        res_df (pd.DataFrame): A DataFrame containing budgeted solutions and their respective scores.
-        init_mlrs (list of float): Initial M.L.R. values before any flips for each score label.
-        score_labels (list of str): List of score labels (columns in `res_df`) to plot.
-        opt_methods_display_labels (list of str): List of method labels that should be bolded in the legend.
-        method_to_display_name (dict): Dictionary mapping method names to their display names in the legend.
-        colors_list (list of str): List of colors for each score label.
-        save_plots_path (str, optional): Directory path to save the plot. Defaults to "" (not saved).
-        exp_idx (int, optional): Experiment index to include in the title and filename. Defaults to None.
-        figsize (tuple, optional): Figure size for the plot. Defaults to (20, 8).
-        flips_limit (int, optional): Maximum number of flips to consider when plotting. Defaults to None (no limit).
-        optim_sols_only (bool, optional): If True, only considers solutions where the optimization status is 1
-            (indicating an optimal solution). Defaults to False.
-        predefined_colors (list, optional): List of predefined colors to use for the methods. Defaults to an empty list.
-        display_title (bool, optional): Whether to display the plot title. Defaults to True.
-        append_to_save (str, optional): Additional text to append to the save filename. Defaults to "".
-
-    Raises:
-        ValueError: If the number of predefined colors is less than the number of labels.
-
-    Functionality:
-        - Extracts M.L.R. values for each score label from `res_df`.
-        - Filters based on optimization status and flip budget constraints.
-        - Generates a line plot comparing M.L.R. drop across different datasets for the specified method.
-        - Allows for bold labeling of specific optimization methods.
-        - Saves the plot if `save_plots_path` is provided.
-    """
-
-    assert len(init_mlrs) == len(score_labels)
-    methods_mlrs = []
-
-    score_label_2_disp_name = {
-        "mlr_eq_opp_sol": "Solution",
-        "mlr_eq_opp_val": "Val Set",
-        "mlr_eq_opp_test": "Test Set",
-        "mlr_st_par_sol": "Solution",
-        "mlr_st_par_val": "Val Set",
-        "mlr_st_par_test": "Test Set",
-    }
-
-    labels = [
-        f"{method_to_display_name[method_name]} - {score_label_2_disp_name[score_label]}"
-        for score_label in score_labels
-    ]
-    budget_list = []
-    colors = []
-
-    method_res_info_df_cp = res_df.copy()
-    if optim_sols_only and "status" in method_res_info_df_cp.columns:
-        method_res_info_df_cp = method_res_info_df_cp[
-            method_res_info_df_cp["status"] == 1
-        ]
-    if flips_limit:
-        method_res_info_df_cp = method_res_info_df_cp[
-            method_res_info_df_cp["budget"] <= flips_limit
-        ]
-
-    methods_mlrs = [
-        [init_mlrs[i]] + method_res_info_df_cp[score_labels[i]].to_list()
-        for i in range(len(score_labels))
-    ]
-    method_budget = [0] + method_res_info_df_cp["budget"].to_list()
-
-    budget_list = [method_budget] * len(score_labels)
-    colors = [colors_list[i] for i in range(len(score_labels))]
-
-    if predefined_colors:
-        if len(labels) > len(predefined_colors):
-            raise ValueError("len(labels) > len(predefined_colors)")
-        colors = predefined_colors[: len(labels)]
-
-    values_lists = methods_mlrs
-
-    title = f"Strategies M.L.R drop comparison For {method_name}"
-    if exp_idx is not None:
-        title = f"{title} exp_idx: {exp_idx}"
-    xlabel = "Number of flips"
-    ylabel = "M.L.R."
-    mlr_save_path = ""
-    if save_plots_path:
-        mlr_save_path = f"{save_plots_path}methods_mlr_{method_name}.pdf"
-
-        if exp_idx is not None:
-            mlr_save_path = f"{save_plots_path}methods_mlr{append_to_save}_exp_idx_{exp_idx}_{method_name}.pdf"
-
-    bold_labels = [label for label in labels if label in opt_methods_display_labels]
-    plot_graphs(
-        values_lists=values_lists,
-        labels=labels,
-        xlabel=xlabel,
-        ylabel=ylabel,
-        colors=colors,
-        title=title if display_title else "",
-        save_path=mlr_save_path,
-        figsize=figsize,
-        bold_labels=bold_labels,
-        x_values=budget_list,
-        scatter_plot=True,
-        linewidths=[8] * len(labels),
-    )
-
-
-def plot_all_methods_multi_scores(
-    all_methods_to_results_info,
-    init_mlrs,
-    score_labels,
-    opt_methods_display_labels,
-    method_to_display_name,
-    colors_list,
-    save_plots_path="",
-    exp_idx=None,
-    figsize=(20, 8),
-    flips_limit=None,
-    optim_sols_only=False,
-    predefined_colors=[],
-    display_title=True,
-):
-    """
-    Plots multiple M.L.R. scores for all methods present in the results dictionary.
-
-    Args:
-        all_methods_to_results_info (dict): A dictionary where keys are method names and values are DataFrames
-            containing budgeted solutions and their respective scores.
-        init_mlrs (list of float): Initial M.L.R. values before any flips for each score label.
-        score_labels (list of str): List of score labels (columns in the DataFrame) to plot.
-        opt_methods_display_labels (list of str): List of method labels that should be bolded in the legend.
-        method_to_display_name (dict): Dictionary mapping method names to their display names in the legend.
-        colors_list (list of str): List of colors to use for each score label.
-        save_plots_path (str, optional): Directory path to save the plots. Defaults to "" (not saved).
-        exp_idx (int, optional): Experiment index to include in the title and filename. Defaults to None.
-        figsize (tuple, optional): Figure size for the plots. Defaults to (20, 8).
-        flips_limit (int, optional): Maximum number of flips to consider when plotting. Defaults to None (no limit).
-        optim_sols_only (bool, optional): If True, only considers solutions where the optimization status is 1
-            (indicating an optimal solution). Defaults to False.
-        predefined_colors (list, optional): List of predefined colors to use for the methods. Defaults to an empty list.
-        display_title (bool, optional): Whether to display the plot title. Defaults to True.
-
-    Functionality:
-        - Iterates over all methods in `all_methods_to_results_info`.
-        - Calls `plot_multi_scores` for each method, passing the relevant parameters.
-        - Generates plots for each method comparing M.L.R. drop across different sets.
-        - Allows for filtering based on optimization status and flip budget constraints.
-        - Supports saving plots to a specified directory.
-
-    """
-
-    for method, res_df in all_methods_to_results_info.items():
-        plot_multi_scores(
-            method,
-            res_df,
-            init_mlrs,
-            score_labels=score_labels,
-            opt_methods_display_labels=opt_methods_display_labels,
-            method_to_display_name=method_to_display_name,
-            colors_list=colors_list,
-            save_plots_path=save_plots_path,
-            exp_idx=exp_idx,
-            figsize=figsize,
-            flips_limit=flips_limit,
-            optim_sols_only=optim_sols_only,
-            predefined_colors=predefined_colors,
-            display_title=display_title,
-        )
-
-
-def plot_flips_time(
-    exp_methods_to_res_info,
-    method_to_display_name,
-    method_to_plot_info,
-    opt_methods_display_labels,
-    title_append="",
-    save_append="",
-    save_plots_path="",
-    log_time=False,
-    exp_idx=None,
-    figsize=(20, 8),
-    display_title=True,
-    axhline_time=None,
-    axhline_time_label=None,
-):
-    """
-    Plots the execution time for different methods as a function of the number of flips.
-
-    Args:
-        exp_methods_to_res_info (dict): A dictionary where keys are method names and values are DataFrames
-            containing execution times and budgets.
-        method_to_display_name (dict): Mapping of method names to display names for the legend.
-        method_to_plot_info (dict): Dictionary containing plot attributes (color, linewidth, linestyle) for each method.
-        opt_methods_display_labels (list of str): List of method labels to highlight in bold in the legend.
-        title_append (str, optional): Additional text to append to the plot title. Defaults to "".
-        save_append (str, optional): Additional text to append to the save file name. Defaults to "".
-        save_plots_path (str, optional): Path to save the generated plot. Defaults to "" (not saved).
-        log_time (bool, optional): If True, plots the logarithm of execution time. Defaults to False.
-        exp_idx (int, optional): Experiment index for display and saving purposes. Defaults to None.
-        figsize (tuple, optional): Figure size of the plot. Defaults to (20, 8).
-        display_title (bool, optional): Whether to display the plot title. Defaults to True.
-        axhline_time (float, optional): Value for drawing a horizontal reference line in the plot. Defaults to None.
-        axhline_time_label (str, optional): Label for the horizontal reference line. Defaults to None.
-
-    Functionality:
-        - Iterates through methods and extracts execution times and flip budgets.
-        - Optionally applies a logarithmic scale to execution times.
-        - Generates a plot where execution time is shown against the number of flips.
-        - Highlights specific methods in bold.
-        - Supports saving the plot in `.pdf` format if `save_plots_path` is provided.
-        - Allows adding a reference line for execution time.
-    """
-
-    if axhline_time and log_time:
-        axhline_time = np.log(axhline_time)
-    labels = []
-    exec_times = []
-    n_flips_list = []
-    colors = []
-    linewidths = []
-    linestyles = []
-    markers_sizes = []
-    for method, res_df in exp_methods_to_res_info.items():
-        labels.append(method_to_display_name[method])
-        if log_time:
-            exec_times.append([np.log(t) for t in res_df["time"].to_list()])
-        else:
-            exec_times.append(res_df["time"].to_list())
-        n_flips_list.append(res_df["budget"].tolist())
-        colors.append(method_to_plot_info[method]["color"])
-        linewidths.append(method_to_plot_info[method]["linewidth"])
-        linestyles.append(method_to_plot_info[method]["linestyle"])
-        markers_sizes.append(method_to_plot_info[method]["marker_size"])
-
-    time_label = "Execution Time"
-    time_save_label = "exec_time"
-    if log_time:
-        time_label = "Log Execution Time"
-        time_save_label = "log_exec_time"
-
-    if display_title:
-        title = f"{time_label} per Number of Flips"
-        if title_append:
-            title = f"{title} {title_append}"
-        if exp_idx is not None:
-            title = f"{title} exp_idx: {exp_idx}"
-    else:
-        title = ""
-
-    save_flips_time_path = ""
-    if save_plots_path:
-        save_flips_time_path = (
-            f"{save_plots_path}{time_save_label}_per_flips{save_append}"
-        )
-        if exp_idx is not None:
-            save_flips_time_path = f"{save_flips_time_path}_exp_idx_{exp_idx}"
-
-        save_flips_time_path = f"{save_flips_time_path}.pdf"
-
-    xlabel = "Number Of Flips"
-    ylabel = f"{time_label} (seconds)"
-
-    bold_labels = [label for label in labels if label in opt_methods_display_labels]
-    plot_graphs(
-        values_lists=exec_times,
-        x_values=n_flips_list,
-        labels=labels,
-        title=title,
-        xlabel=xlabel,
-        ylabel=ylabel,
-        colors=colors,
-        save_path=save_flips_time_path,
-        figsize=figsize,
-        linewidths=linewidths,
-        linestyles=linestyles,
-        bold_labels=bold_labels,
-        scatter_plot=True,
-        axhline=axhline_time,
-        axhline_label=axhline_time_label,
-        marker_sizes=markers_sizes,
-    )
-
-
-def plot_mlr_vs_time(
-    methods_to_res_info,
-    mlr_label,
-    method_to_display_name,
-    method_to_plot_info,
-    opt_methods_display_labels,
-    save_plots_path="",
-    exp_idx=None,
-    figsize=(20, 8),
-    log_time=False,
-    append_to_title="",
-    append_to_save="",
-    display_title=True,
-):
-    """
-    Plots the relationship between MLR (Mean Log Ratio) and execution time for multiple methods.
-
-    This function generates two scatter plots:
-    1. MLR vs Time (Execution time on the X-axis and MLR on the Y-axis)
-    2. Time vs MLR (MLR on the X-axis and Execution time on the Y-axis, with reversed X-axis)
-
-    Args:
-        methods_to_res_info (dict): A dictionary mapping method names to DataFrames containing
-            results including MLR and execution time.
-        mlr_label (str): The column name representing MLR in the DataFrames.
-        method_to_display_name (dict): A mapping of method names to their display names for legends.
-        method_to_plot_info (dict): Dictionary containing visualization attributes (color, linewidth, scatter markers)
-            for each method.
-        opt_methods_display_labels (list of str): Labels of methods to be highlighted in bold in the legend.
-        save_plots_path (str, optional): Path to save the generated plots. Defaults to "" (no saving).
-        exp_idx (int, optional): Experiment index for labeling the plots. Defaults to None.
-        figsize (tuple, optional): Figure size for the plots. Defaults to (20, 8).
-        log_time (bool, optional): If True, the execution time will be plotted on a logarithmic scale. Defaults to False.
-        append_to_title (str, optional): Additional text to append to the plot titles. Defaults to "".
-        append_to_save (str, optional): Additional text to append to the filenames when saving plots. Defaults to "".
-        display_title (bool, optional): Whether to display the title on the plots. Defaults to True.
-
-    Functionality:
-        - Extracts MLR and execution time for each method.
-        - Optionally applies logarithm transformation to execution time.
-        - Generates two scatter plots: one for MLR vs Time and another for Time vs MLR.
-        - Saves plots to the specified path if provided.
-
-    """
-
-    methods_mlr = []
-    methods_times = []
-    labels = []
-    scatter_markers = []
-    colors = []
-    linewidths = []
-
-    time_label = ""
-    if log_time:
-        time_label = "log Time"
-
-    for method, method_res_info_df in methods_to_res_info.items():
-        labels.append(method)
-        methods_mlr.append(method_res_info_df[mlr_label].to_list())
-        method_times = method_res_info_df["time"].tolist()
-        if log_time:
-            method_times = [np.log(tm) for tm in method_times]
-        methods_times.append(method_times)
-        scatter_markers.append(method_to_plot_info[method]["scatter_marker"])
-        colors.append(method_to_plot_info[method]["color"])
-        linewidths.append(method_to_plot_info[method]["linewidth"])
-
-    title = f"MLR vs {time_label}{append_to_title} "
-
-    if exp_idx is not None:
-        title = f"{title} exp_idx: {exp_idx}"
-
-    xlabel = f"{time_label} (s)"
-    ylabel = "M.L.R."
-
-    mlr_time_save_path = ""
-    if save_plots_path:
-        mlr_time_save_path = f"{save_plots_path}methods_mlr_vs_time{append_to_save}.pdf"
-        if exp_idx is not None:
-            mlr_time_save_path = f"{save_plots_path}methods_mlr_vs_time{append_to_save}_exp_idx_{exp_idx}.pdf"
-
-    labels = [method_to_display_name[label] for label in labels]
-    bold_labels = [label for label in labels if label in opt_methods_display_labels]
-
-    plot_graphs(
-        values_lists=methods_mlr,
-        labels=labels,
-        title=title,
-        x_values=methods_times,
-        xlabel=xlabel,
-        ylabel=ylabel,
-        colors=colors,
-        save_path=mlr_time_save_path,
-        figsize=figsize,
-        linewidths=linewidths,
-        bold_labels=bold_labels,
-        scatter_plot=True,
-        scatter_markers=scatter_markers,
-    )
-
-    xlabel = "MLR"
-    ylabel = f"{time_label} (s)"
-    title = f"{time_label} vs MLR{append_to_title} "
-
-    if exp_idx is not None:
-        title = f"{title} exp_idx: {exp_idx}"
-
-    time_mlr_save_path = ""
-    if save_plots_path:
-        time_mlr_save_path = f"{save_plots_path}methods_time_vs_mlr{append_to_save}.pdf"
-        if exp_idx is not None:
-            time_mlr_save_path = f"{save_plots_path}methods_time_vs_mlr{append_to_save}_exp_idx_{exp_idx}.pdf"
-    title = title if display_title else ""
-    plot_graphs(
-        values_lists=methods_times,
-        labels=labels,
-        title=title,
-        x_values=methods_mlr,
-        xlabel=xlabel,
-        ylabel=ylabel,
-        colors=colors,
-        save_path=time_mlr_save_path,
-        figsize=figsize,
-        linewidths=linewidths,
-        bold_labels=bold_labels,
-        scatter_plot=True,
-        rev_xaxis=True,
-        scatter_markers=scatter_markers,
-    )
-
-
-def plot_metrics(
-    methods_to_res_info,
-    score_label,
-    ylabel,
-    method_to_plot_info,
-    method_to_display_name,
-    opt_methods_display_labels,
-    save_plots_path="",
-    exp_idx=None,
-    default_linestyle=False,
-    figsize=(20, 8),
-    flips_limit=None,
-    optim_sols_only=False,
-    predefined_colors=[],
-    append_to_title="",
-    append_to_save="",
-    display_title=True,
-    axhline_score=None,
-    axhline_score_label=None,
-    init_score=None,
-):
-    """
-    Plots a comparison of different methods' performance metrics (e.g., accuracy, fairness) over the number of flips.
-
-    This function visualizes how different methods perform over an increasing number of label flips, using a line plot.
-    It supports optional initial values, filtering based on solution optimality, and saving the plots.
-
-    Args:
-        methods_to_res_info (dict): A dictionary mapping method names to their result DataFrames.
-        score_label (str): The column name in the DataFrame representing the metric to plot.
-        ylabel (str): The label for the y-axis.
-        method_to_plot_info (dict): A dictionary containing visualization attributes (color, linewidth, linestyle)
-            for each method.
-        method_to_display_name (dict): A mapping of method names to their display names.
-        opt_methods_display_labels (list of str): Labels of methods to be highlighted in bold in the legend.
-        save_plots_path (str, optional): Path to save the generated plot. Defaults to "" (no saving).
-        exp_idx (int, optional): Experiment index for labeling the plots. Defaults to None.
-        default_linestyle (bool, optional): If True, all lines will have a solid linestyle. Defaults to False.
-        figsize (tuple, optional): Figure size for the plot. Defaults to (20, 8).
-        flips_limit (int, optional): If set, filters the data to include only up to this number of flips. Defaults to None.
-        optim_sols_only (bool, optional): If True, only solutions with status 1 (optimal) are considered. Defaults to False.
-        predefined_colors (list, optional): List of predefined colors for the lines. Defaults to an empty list.
-        append_to_title (str, optional): Additional text to append to the plot title. Defaults to "".
-        append_to_save (str, optional): Additional text to append to the filename when saving the plot. Defaults to "".
-        display_title (bool, optional): Whether to display the title on the plot. Defaults to True.
-        axhline_score (float, optional): Horizontal line value for reference (e.g., initial accuracy). Defaults to None.
-        axhline_score_label (str, optional): Label for the horizontal reference line. Defaults to None.
-        init_score (float, optional): Initial value of the metric before any flips. Defaults to None.
-
-    Functionality:
-        - Extracts metric values from the result DataFrames.
-        - Filters and processes the data based on constraints (e.g., `optim_sols_only`, `flips_limit`).
-        - Plots metric evolution over the number of flips for different methods.
-        - Allows optional horizontal reference lines and bold labels for optimization methods.
-        - Saves the plot if `save_plots_path` is provided.
-    """
-
-    methods_accs = []
-
-    labels = []
-    budget_list = []
-    colors = []
-    linewidths = []
-    linestyles = []
-
-    init_budget = [0] if init_score is not None else []
-    init_score = [init_score] if init_score is not None else []
-
-    for method, method_res_info_df in methods_to_res_info.items():
-        labels.append(method_to_display_name[method])
-        method_res_info_df_cp = method_res_info_df.copy()
-        if optim_sols_only and "status" in method_res_info_df_cp.columns:
-            method_res_info_df_cp = method_res_info_df_cp[
-                method_res_info_df_cp["status"] == 1
-            ]
-        if flips_limit:
-            method_res_info_df_cp = method_res_info_df_cp[
-                method_res_info_df_cp["budget"] <= flips_limit
-            ]
-        method_acc = method_res_info_df_cp[score_label].to_list()
-        methods_accs.append(init_score + method_acc)
-        method_budget = method_res_info_df_cp["budget"].to_list()
-        budget_list.append(init_budget + method_budget)
-        colors.append(method_to_plot_info[method]["color"])
-        linewidths.append(method_to_plot_info[method]["linewidth"])
-        linestyles.append(method_to_plot_info[method]["linestyle"])
-
-    if default_linestyle:
-        linestyles = ["-"] * (len(labels))
-
-    if predefined_colors:
-        if len(labels) > len(predefined_colors):
-            raise ValueError("len(labels) > len(predefined_colors)")
-        colors = predefined_colors[: len(labels)]
-    if display_title:
-        title = f"Strategies {ylabel} per Number of Flips{append_to_title}"
-        if exp_idx is not None:
-            title = f"{title} exp_idx: {exp_idx}"
-    else:
-        title = ""
-
-    xlabel = "Number of flips"
-    acc_save_path = ""
-    if save_plots_path:
-        acc_save_path = f"{save_plots_path}methods_{score_label}{append_to_save}.pdf"
-
-        if exp_idx is not None:
-            acc_save_path = f"{save_plots_path}methods_{score_label}_{append_to_save}_exp_idx_{exp_idx}.pdf"
-
-    bold_labels = [label for label in labels if label in opt_methods_display_labels]
-    plot_graphs(
-        methods_accs,
-        labels,
-        title,
-        xlabel,
-        ylabel,
-        colors,
-        save_path=acc_save_path,
-        figsize=figsize,
-        linewidths=linewidths,
-        bold_labels=bold_labels,
-        x_values=budget_list,
-        linestyles=linestyles,
-        scatter_plot=True,
-        axhline=axhline_score,
-        axhline_label=axhline_score_label,
-    )
-
-
-def plot_scores(
-    methods_to_res_info,
-    init_mlr,
-    method_to_plot_info,
-    method_to_display_name,
-    opt_methods_display_labels,
-    save_plots_path="",
-    exp_idx=None,
-    default_linestyle=False,
-    figsize=(20, 8),
-    flips_limit=None,
-    optim_sols_only=False,
-    predefined_colors=[],
-    append_to_title="",
-    append_to_save="",
-    score_label="mlr",
-    display_title=True,
-    axhline_mlr=None,
-    axhline_mlr_label=None,
+    other_mlr=None,
+    other_mlr_method=None,
 ):
     """
     Plots the MLR score drop comparison across different methods.
@@ -1202,34 +530,32 @@ def plot_scores(
         method_to_plot_info (dict): A dictionary containing plot attributes for each method
             (e.g., color, linewidth, linestyle, marker size).
         method_to_display_name (dict): A mapping from method names to their display labels.
-        opt_methods_display_labels (list): A list of method labels that should be highlighted
-            in bold on the plot.
         save_plots_path (str, optional): Path to save the generated plot. Defaults to "" (no save).
-        exp_idx (int, optional): Experiment index to be appended to the title and filename. Defaults to None.
-        default_linestyle (bool, optional): If True, overrides all linestyles with a default solid line. Defaults to False.
         figsize (tuple, optional): Figure size for the plot. Defaults to (20, 8).
         flips_limit (int, optional): Maximum number of budget flips to include in the plot. Defaults to None.
         optim_sols_only (bool, optional): If True, filters only optimal solutions (status=1) from the results. Defaults to False.
-        predefined_colors (list, optional): A predefined list of colors for the plot lines. Defaults to an empty list.
         append_to_title (str, optional): Additional text to append to the plot title. Defaults to "".
         append_to_save (str, optional): Additional text to append to the save filename. Defaults to "".
         score_label (str, optional): Column name in the DataFrame representing the score to plot. Defaults to "mlr".
         display_title (bool, optional): Whether to display the plot title. Defaults to True.
-        axhline_mlr (float, optional): A horizontal reference line at a specific MLR value. Defaults to None.
-        axhline_mlr_label (str, optional): Label for the horizontal reference line. Defaults to None.
+        other_mlr (float, optional): A horizontal reference line at a specific MLR value. Defaults to None.
+        other_mlr_method (str, optional): Label for the horizontal reference line. Defaults to None.
 
     Returns:
-        None: The function generates and displays a plot but does not return a value.
+        None
     """
 
-    methods_mlrs = []
+    scatter_mlrs = []
+    line_mlrs = []
 
     labels = []
-    budget_list = []
+    line_budget_list = []
+    scatter_budget_list = []
     colors = []
     linewidths = []
     linestyles = []
     markers_sz = []
+    markers = []
 
     for method, method_res_info_df in methods_to_res_info.items():
         labels.append(method_to_display_name[method])
@@ -1242,41 +568,41 @@ def plot_scores(
             method_res_info_df_cp = method_res_info_df_cp[
                 method_res_info_df_cp["budget"] <= flips_limit
             ]
-        method_mlrs = [init_mlr] + method_res_info_df_cp[score_label].to_list()
-        methods_mlrs.append(method_mlrs)
-        method_budget = [0] + method_res_info_df_cp["budget"].to_list()
-        budget_list.append(method_budget)
+        method_mlrs = method_res_info_df_cp[score_label].to_list()
+        line_mlrs.append([init_mlr] + method_mlrs)
+        scatter_mlrs.append(method_mlrs)
+
+        method_budget = method_res_info_df_cp["budget"].to_list()
+        line_budget_list.append([0] + method_budget)
+        scatter_budget_list.append(method_budget)
+
         colors.append(method_to_plot_info[method]["color"])
         linewidths.append(method_to_plot_info[method]["linewidth"])
         linestyles.append(method_to_plot_info[method]["linestyle"])
         markers_sz.append(method_to_plot_info[method]["marker_size"])
-    if default_linestyle:
-        linestyles = ["-"] * (len(labels))
+        markers.append(method_to_plot_info[method]["scatter_marker"])
 
-    if predefined_colors:
-        if len(labels) > len(predefined_colors):
-            raise ValueError("len(labels) > len(predefined_colors)")
-        colors = predefined_colors[: len(labels)]
-
-    values_lists = methods_mlrs
+    if other_mlr is not None:
+        labels.append(method_to_display_name[other_mlr_method])
+        line_mlrs.append([init_mlr, other_mlr])
+        scatter_mlrs.append([other_mlr])
+        line_budget_list.append([0, max(line_budget_list[-1])])
+        scatter_budget_list.append([max(line_budget_list[-1])])
+        colors.append(method_to_plot_info[other_mlr_method]["color"])
+        linewidths.append(method_to_plot_info[other_mlr_method]["linewidth"])
+        linestyles.append(method_to_plot_info[other_mlr_method]["linestyle"])
+        markers_sz.append(method_to_plot_info[other_mlr_method]["marker_size"])
+        markers.append(method_to_plot_info[other_mlr_method]["scatter_marker"])
 
     title = f"Strategies MLR drop comparison{append_to_title}"
-    if exp_idx is not None:
-        title = f"{title} exp_idx: {exp_idx}"
-    xlabel = "Number of Flips"
+    xlabel = "Maximum Number of Flips"
     ylabel = "MLR"
     mlr_save_path = ""
     if save_plots_path:
         mlr_save_path = f"{save_plots_path}methods_mlr{append_to_save}.pdf"
 
-        if exp_idx is not None:
-            mlr_save_path = (
-                f"{save_plots_path}methods_mlr{append_to_save}_exp_idx_{exp_idx}.pdf"
-            )
-
-    bold_labels = [label for label in labels if label in opt_methods_display_labels]
-    plot_graphs(
-        values_lists=values_lists,
+    ax = plot_graphs(
+        values_lists=line_mlrs,
         labels=labels,
         xlabel=xlabel,
         ylabel=ylabel,
@@ -1285,13 +611,34 @@ def plot_scores(
         save_path=mlr_save_path,
         figsize=figsize,
         linewidths=linewidths,
-        bold_labels=bold_labels,
-        x_values=budget_list,
+        x_values=line_budget_list,
         linestyles=linestyles,
-        scatter_plot=True,
-        axhline=axhline_mlr,
-        axhline_label=axhline_mlr_label,
+        scatter_plot=False,
         marker_sizes=markers_sz,
+        scatter_markers=markers,
+        line_plot=True,
+        plot_legend=False,
+        show_plot=False,
+    )
+
+    plot_graphs(
+        values_lists=scatter_mlrs + [init_mlr],
+        labels=labels + [method_to_display_name["init"]],
+        xlabel=xlabel,
+        ylabel=ylabel,
+        colors=colors + [method_to_plot_info["init"]["color"]],
+        title=title if display_title else "",
+        save_path=mlr_save_path,
+        figsize=figsize,
+        linewidths=linewidths + [method_to_plot_info["init"]["linewidth"]],
+        x_values=scatter_budget_list + [0],
+        linestyles=linestyles + [method_to_plot_info["init"]["linestyle"]],
+        scatter_plot=True,
+        marker_sizes=markers_sz + [method_to_plot_info["init"]["marker_size"]],
+        scatter_markers=markers + [method_to_plot_info["init"]["scatter_marker"]],
+        line_plot=False,
+        ax=ax,
+        zorders=[2] * len(labels) + [3],
     )
 
 
@@ -1304,15 +651,15 @@ def plot_compare_methods_info(
     actual_flips_label,
     method_to_plot_info,
     method_to_display_name,
-    opt_methods_display_labels,
     save_path="",
     figsize=(20, 8),
     append_to_title="",
-    exp_idx=None,
     display_title=True,
-    axhline_P=None,
-    axhline_RHO=None,
-    axhline_label=None,
+    other_P=None,
+    other_RHO=None,
+    other_actual_flips=None,
+    other_actual_pos_flips=None,
+    other_method=None,
 ):
     """
     Compares and plots method-specific performance metrics across different strategies.
@@ -1331,37 +678,34 @@ def plot_compare_methods_info(
         method_to_plot_info (dict): A dictionary containing plotting attributes for each method
             (e.g., color, linewidth, linestyle, marker size).
         method_to_display_name (dict): A mapping from method names to their display labels.
-        opt_methods_display_labels (list): List of method labels that should be highlighted in bold.
         save_path (str, optional): Path to save the generated plots. Defaults to "" (no save).
         figsize (tuple, optional): Figure size for the plots. Defaults to (20, 8).
         append_to_title (str, optional): Additional text to append to the plot titles. Defaults to "".
-        exp_idx (int, optional): Experiment index to be included in the plot titles and filenames. Defaults to None.
         display_title (bool, optional): Whether to display plot titles. Defaults to True.
-        axhline_P (float, optional): Horizontal reference line for the positive predictions plot. Defaults to None.
-        axhline_RHO (float, optional): Horizontal reference line for the positive ratio of predictions plot. Defaults to None.
-        axhline_label (str, optional): Label for the horizontal reference lines. Defaults to None.
+        other_P (float, optional): Additional value for the positive predictions plot. Defaults to None.
+        other_RHO (float, optional): Additinal value for the positive ratio of predictions plot. Defaults to None.
+        other_actual_flips (int, optional): Additional value for the actual flips plot. Defaults to None.
+        other_actual_pos_flips (int, optional): Additional value for the actual positive flips plot. Defaults to None.
+        other_method (str, optional): Additional method. Defaults to None.
 
     Returns:
-        None: The function generates and displays multiple plots but does not return a value.
+        None
     """
 
-    all_methods_labels = []
+    labels = []
     p_list = []
-    p_signif_list = []
     rho_list = []
-    rho_signif_list = []
     actual_flips_list = []
     actual_flips_pos_list = []
-    actual_flips_signif_list = []
-    num_flips = []
-    signif_num_flips = []
+    budgets_list = []
     all_linewidths = []
     all_colors = []
     all_linestyles = []
     markers_sz = []
+    markers = []
 
     for method_name, res_info_df in all_methods_to_results_info.items():
-        all_methods_labels.append(method_to_display_name[method_name])
+        labels.append(method_to_display_name[method_name])
         p_list.append([init_p] + res_info_df[p_label].tolist())
         rho_list.append([init_rho] + res_info_df[rho_label].tolist())
         actual_flips_list.append([0] + res_info_df[actual_flips_label].tolist())
@@ -1369,99 +713,115 @@ def plot_compare_methods_info(
             actual_flips_pos_list.append(
                 [0] + res_info_df[f"{actual_flips_label}_pos"].tolist()
             )
-        num_flips.append([0] + res_info_df["budget"].to_list())
+        budgets_list.append([0] + res_info_df["budget"].to_list())
         all_colors.append(method_to_plot_info[method_name]["color"])
         all_linewidths.append(method_to_plot_info[method_name]["linewidth"])
         all_linestyles.append(method_to_plot_info[method_name]["linestyle"])
         markers_sz.append(method_to_plot_info[method_name]["marker_size"])
+        markers.append(method_to_plot_info[method_name]["scatter_marker"])
 
-    all_p_list = p_list + p_signif_list
-    all_rho_list = rho_list + rho_signif_list
-    all_actual_flips_list = actual_flips_list + actual_flips_signif_list
-    flips_lists = num_flips + signif_num_flips
+    if other_P and other_RHO and other_actual_flips and other_actual_pos_flips:
+        labels.append(method_to_display_name[other_method])
+        p_list.append([init_p, other_P])
+        rho_list.append([init_rho, other_RHO])
+        actual_flips_list.append([0, other_actual_flips])
+        actual_flips_pos_list.append([0, other_actual_pos_flips])
+        budgets_list.append([0, max(budgets_list[0])])
+        all_colors.append(method_to_plot_info[other_method]["color"])
+        all_linewidths.append(method_to_plot_info[other_method]["linewidth"])
+        all_linestyles.append(method_to_plot_info[other_method]["linestyle"])
+        markers_sz.append(method_to_plot_info[other_method]["marker_size"])
+        markers.append(method_to_plot_info[other_method]["scatter_marker"])
 
-    values_lists = all_p_list
-    labels = []
-    bold_labels = []
-    for i in range(len(all_methods_labels)):
-        new_label = f"{all_methods_labels[i]}"
-        labels.append(new_label)
-        if all_methods_labels[i] in opt_methods_display_labels:
-            bold_labels.append(new_label)
+    zorders = [2] * len(labels)
 
-    if display_title:
-        title = f"{p_label} per Number of Flips{append_to_title}"
-        if exp_idx is not None:
-            title = f"{title} exp_idx: {exp_idx}"
-    else:
-        title = ""
-
-    xlabel = "Number of Flips"
-    ylabel = p_label
-    if save_path:
-        p_save_path = f"{save_path}methods_{p_label}.pdf"
-    else:
-        p_save_path = ""
-
-    plot_graphs(
-        values_lists=values_lists,
+    x_values_scatter = [x[1:] for x in budgets_list] + [0]
+    labels_scatter = labels + [method_to_display_name["init"]]
+    all_colors_scatter = all_colors + [method_to_plot_info["init"]["color"]]
+    all_linewidths_scatter = all_linewidths + [method_to_plot_info["init"]["linewidth"]]
+    all_linestyles_scatter = all_linestyles + [method_to_plot_info["init"]["linestyle"]]
+    markers_sz_scatter = markers_sz + [method_to_plot_info["init"]["marker_size"]]
+    markers_scatter = markers + [method_to_plot_info["init"]["scatter_marker"]]
+    zorders_scatter = zorders + [3]
+    xlabel = "Maximum Number of Flips"
+    ax_p = plot_graphs(
+        values_lists=p_list,
         labels=labels,
         xlabel=xlabel,
         ylabel="Positive Predictions",
         colors=all_colors,
-        title=title,
-        save_path=p_save_path,
+        title="",
         linewidths=all_linewidths,
         figsize=figsize,
         linestyles=all_linestyles,
-        bold_labels=bold_labels,
-        x_values=flips_lists,
+        x_values=budgets_list,
+        scatter_plot=False,
+        plot_legend=False,
+        zorders=zorders,
+        show_plot=False,
+    )
+    plot_graphs(
+        values_lists=[x[1:] for x in p_list] + [init_p],
+        labels=labels_scatter,
+        xlabel=xlabel,
+        ylabel="Positive Predictions",
+        colors=all_colors_scatter,
+        title=(
+            f"{p_label} per Number of Flips{append_to_title}" if display_title else ""
+        ),
+        save_path=f"{save_path}methods_{p_label}.pdf" if save_path else "",
+        linewidths=all_linewidths_scatter,
+        figsize=figsize,
+        linestyles=all_linestyles_scatter,
+        x_values=x_values_scatter,
         scatter_plot=True,
-        axhline=axhline_P,
-        axhline_label=f"{axhline_label}",
-        marker_sizes=markers_sz,
+        marker_sizes=markers_sz_scatter,
+        scatter_markers=markers_scatter,
+        ax=ax_p,
+        line_plot=False,
+        plot_legend=True,
+        zorders=zorders_scatter,
+        show_plot=True,
     )
 
-    values_lists = all_rho_list
-    labels = []
-    bold_labels = []
-    for i in range(len(all_methods_labels)):
-        new_label = f"{all_methods_labels[i]}"
-        labels.append(new_label)
-        if all_methods_labels[i] in opt_methods_display_labels:
-            bold_labels.append(new_label)
-
-    if display_title:
-        title = f"{rho_label} per Number of Flips{append_to_title}"
-        if exp_idx is not None:
-            title = f"{title} exp_idx: {exp_idx}"
-    else:
-        title = ""
-
-    xlabel = "Number of Flips"
-    ylabel = "Positive Ratio of Predictions"
-    if save_path:
-        rho_save_path = f"{save_path}methods_{rho_label}.pdf"
-    else:
-        rho_save_path = ""
-
-    plot_graphs(
-        values_lists=values_lists,
+    ax_rho = plot_graphs(
+        values_lists=rho_list,
         labels=labels,
         xlabel=xlabel,
-        ylabel=ylabel,
+        ylabel="Positive Ratio of Predictions",
         colors=all_colors,
-        title=title,
-        save_path=rho_save_path,
+        title="",
         linewidths=all_linewidths,
         figsize=figsize,
         linestyles=all_linestyles,
-        bold_labels=bold_labels,
-        x_values=flips_lists,
+        x_values=budgets_list,
+        scatter_plot=False,
+        plot_legend=False,
+        zorders=zorders,
+        show_plot=False,
+    )
+    plot_graphs(
+        values_lists=[x[1:] for x in rho_list] + [init_rho],
+        labels=labels_scatter,
+        xlabel=xlabel,
+        ylabel="Positive Ratio of Predictions",
+        colors=all_colors_scatter,
+        title=(
+            f"{rho_label} per Number of Flips{append_to_title}" if display_title else ""
+        ),
+        save_path=f"{save_path}methods_{rho_label}.pdf" if save_path else "",
+        linewidths=all_linewidths_scatter,
+        figsize=figsize,
+        linestyles=all_linestyles_scatter,
+        x_values=x_values_scatter,
         scatter_plot=True,
-        axhline=axhline_RHO,
-        axhline_label=f"{axhline_label}",
-        marker_sizes=markers_sz,
+        marker_sizes=markers_sz_scatter,
+        scatter_markers=markers_scatter,
+        ax=ax_rho,
+        line_plot=False,
+        plot_legend=True,
+        zorders=zorders_scatter,
+        show_plot=True,
     )
 
     amethod_res_df = all_methods_to_results_info[
@@ -1469,84 +829,94 @@ def plot_compare_methods_info(
     ]
     n_flips_list = [[0] + amethod_res_df["budget"].tolist()]
 
-    values_lists = n_flips_list + all_actual_flips_list
-    labels = ["Flips Constraint"]
-    for i in range(len(all_methods_labels)):
-        new_label = f"{all_methods_labels[i]}"
-        labels.append(new_label)
-        if all_methods_labels[i] in opt_methods_display_labels:
-            bold_labels.append(new_label)
-
-    if display_title:
-        title = f"Actual Flips per Number of Flips{append_to_title}"
-        if exp_idx is not None:
-            title = f"{title} exp_idx: {exp_idx}"
-    else:
-        title = ""
-
-    xlabel = "Number of Flips"
-    ylabel = "Actual Number of Flips"
-    if save_path:
-        rho_save_path = f"{save_path}methods_{actual_flips_label}.pdf"
-    else:
-        rho_save_path = ""
-
-    plot_graphs(
-        values_lists=values_lists,
-        labels=labels,
+    ax_act_flips = plot_graphs(
+        values_lists=actual_flips_list + n_flips_list,
+        labels=labels + ["Flips Constraint"],
         xlabel=xlabel,
-        ylabel=ylabel,
-        colors=["red"] + all_colors,
-        title=title,
-        save_path=rho_save_path,
-        linewidths=[2] + all_linewidths,
+        ylabel="Actual Number of Flips",
+        colors=all_colors + ["orange"],
+        title="",
+        save_path="",
+        linewidths=all_linewidths + [all_linewidths[0]],
         figsize=figsize,
-        linestyles=["-"] + all_linestyles,
-        bold_labels=bold_labels,
-        x_values=n_flips_list + flips_lists,
-        scatter_plot=True,
-        marker_sizes=markers_sz + [markers_sz[0]],
+        linestyles=all_linestyles + [all_linestyles[0]],
+        x_values=budgets_list + n_flips_list,
+        scatter_plot=False,
+        plot_legend=False,
+        zorders=zorders + [zorders[0]],
+        show_plot=False,
     )
-
-    ### Actual Flips Across Positive True Labels
-    if actual_flips_pos_list:
-        values_lists = n_flips_list + actual_flips_pos_list
-        labels = ["Flips Constraint"]
-        for i in range(len(all_methods_labels)):
-            new_label = f"{all_methods_labels[i]}"
-            labels.append(new_label)
-            if all_methods_labels[i] in opt_methods_display_labels:
-                bold_labels.append(new_label)
-
-        if display_title:
-            title = f"Actual Flips Across Positive Labels per Number of Flips{append_to_title}"
-            if exp_idx is not None:
-                title = f"{title} exp_idx: {exp_idx}"
-        else:
-            title = ""
-
-        xlabel = "Number of Flips"
-        ylabel = "Positive Actual Number of Flips"
-        if save_path:
-            rho_save_path = f"{save_path}methods_{actual_flips_label}_pos.pdf"
-        else:
-            rho_save_path = ""
-
-        plot_graphs(
-            values_lists=values_lists,
-            labels=labels,
+    plot_graphs(
+        values_lists=[x[1:] for x in actual_flips_list] + [[0]] + [n_flips_list[0][1:]],
+        labels=labels_scatter + ["Flips Constraint"],
+        xlabel=xlabel,
+        ylabel="Actual Number of Flips",
+        colors=all_colors_scatter + ["orange"],
+        title=(
+            f"Actual Flips per Number of Flips{append_to_title}"
+            if display_title
+            else ""
+        ),
+        save_path=f"{save_path}methods_{actual_flips_label}.pdf" if save_path else "",
+        linewidths=all_linewidths_scatter + [all_linewidths_scatter[0]],
+        figsize=figsize,
+        linestyles=all_linestyles_scatter + [all_linestyles_scatter[0]],
+        x_values=x_values_scatter + [n_flips_list[0][1:]],
+        scatter_plot=True,
+        marker_sizes=markers_sz_scatter + [markers_sz_scatter[0]],
+        scatter_markers=markers_scatter + ["v"],
+        ax=ax_act_flips,
+        line_plot=False,
+        plot_legend=True,
+        zorders=zorders_scatter + [zorders[0]],
+        show_plot=True,
+    )
+    if len(actual_flips_pos_list):
+        ax_act_pos_flips = plot_graphs(
+            values_lists=actual_flips_pos_list + n_flips_list,
+            labels=labels + ["Flips Constraint"],
             xlabel=xlabel,
-            ylabel=ylabel,
-            colors=["red"] + all_colors,
-            title=title,
-            save_path=rho_save_path,
-            linewidths=[2] + all_linewidths,
+            ylabel="Positive Actual Number of Flips",
+            colors=all_colors + ["orange"],
+            title="",
+            save_path="",
+            linewidths=all_linewidths + [all_linewidths[0]],
             figsize=figsize,
-            linestyles=["-"] + all_linestyles,
-            bold_labels=bold_labels,
-            x_values=n_flips_list + flips_lists,
+            linestyles=all_linestyles + [all_linestyles[0]],
+            x_values=budgets_list + n_flips_list,
+            scatter_plot=False,
+            plot_legend=False,
+            zorders=zorders + [zorders[0]],
+            show_plot=False,
+        )
+        plot_graphs(
+            values_lists=[x[1:] for x in actual_flips_pos_list]
+            + [[0]]
+            + [n_flips_list[0][1:]],
+            labels=labels_scatter + ["Flips Constraint"],
+            xlabel=xlabel,
+            ylabel="Positive Actual Number of Flips",
+            colors=all_colors_scatter + ["orange"],
+            title=(
+                f"Actual Flips Across Positive Labels per Number of Flips{append_to_title}"
+                if display_title
+                else ""
+            ),
+            save_path=(
+                f"{save_path}methods_{actual_flips_label}_pos.pdf" if save_path else ""
+            ),
+            linewidths=all_linewidths_scatter + [all_linewidths_scatter[0]],
+            figsize=figsize,
+            linestyles=all_linestyles_scatter + [all_linestyles_scatter[0]],
+            x_values=x_values_scatter + [n_flips_list[0][1:]],
             scatter_plot=True,
-            marker_sizes=markers_sz + [markers_sz[0]],
+            marker_sizes=markers_sz_scatter + [markers_sz_scatter[0]],
+            scatter_markers=markers_scatter + ["v"],
+            ax=ax_act_pos_flips,
+            line_plot=False,
+            plot_legend=True,
+            zorders=zorders_scatter + [zorders[0]],
+            show_plot=True,
         )
 
 
@@ -1554,8 +924,6 @@ def plot_regions_norm_stats(
     methods_stats,
     methods_labels,
     xlabel,
-    ylabel,
-    max_stat,
     save_path="",
     figsize=(16, 8),
     append_to_title="",
@@ -1568,15 +936,13 @@ def plot_regions_norm_stats(
     Plots normalized statistics across different regions for various methods.
 
     This function generates a bar chart where the statistics of different methods
-    are normalized by the maximum statistic value and displayed per region.
+    are displayed per region.
 
     Args:
         methods_stats (list of lists): A list where each element is a list of statistics
             for a method, with values corresponding to different regions.
         methods_labels (list of str): Labels for each method to be displayed in the legend.
         xlabel (str): Label for the x-axis.
-        ylabel (str): Label for the y-axis.
-        max_stat (float): The maximum statistic value used for normalization.
         save_path (str, optional): Path to save the generated plot. Defaults to "" (no save).
         figsize (tuple, optional): Figure size for the plot. Defaults to (16, 8).
         append_to_title (str, optional): Additional text to append to the plot title. Defaults to "".
@@ -1586,7 +952,7 @@ def plot_regions_norm_stats(
         method_to_plot_info (dict, optional): Dictionary with plotting attributes (e.g., colors) for each method. Defaults to {}.
 
     Returns:
-        None: The function generates and displays a bar chart but does not return a value.
+        None
     """
 
     fig, ax = plt.subplots(figsize=figsize)
@@ -1606,7 +972,6 @@ def plot_regions_norm_stats(
             else method_stats
         )
 
-        normalized_stats = [stat / max_stat for stat in method_stats]
         plot_info = method_to_plot_info.get(method_label, None)
         if plot_info is not None:
             color = plot_info["color"]
@@ -1617,19 +982,23 @@ def plot_regions_norm_stats(
 
         ax.bar(
             x_indices + idx * bar_width,
-            normalized_stats,
+            method_stats,
             width=bar_width,
             label=method_label,
             color=color,
         )
 
     ax.set_xlabel(xlabel)
-    ax.set_ylabel(ylabel)
+    ax.set_ylabel("Normalized Statistic")
 
     if display_title:
-        ax.set_title(f"Normalized {ylabel} Per Region {append_to_title}")
+        ax.set_title(f"Normalized Statistic Per Region {append_to_title}")
 
-    ax.legend()
+    ax.legend(
+        framealpha=0.2,
+        loc="best",
+        labelspacing=0.2,
+    )
     plt.xticks([])
 
     plt.tight_layout()
@@ -1655,126 +1024,272 @@ def plot_score1_vs_score2(
     init_score2,
     method_to_plot_info,
     method_to_display_name,
-    opt_methods_display_labels,
+    score_label3=None,
+    score_display_label3=None,
+    init_score3=None,
     save_plots_path="",
-    exp_idx=None,
     default_linestyle=False,
-    figsize=(20, 8),
+    figsize=(10, 6),
     flips_limit=None,
-    predefined_colors=[],
     append_to_title="",
     append_to_save="",
     display_title=True,
     other_score1=None,
     other_score2=None,
-    other_method_label=None,
+    other_score_3=None,
+    other_method=None,
+    score_2_min_axis=None,
+    score_2_max_axis=None,
 ):
     """
-    Plots the comparison of two scores across different methods.
+    Plots the comparison of multiple methods based on two or three score metrics across different budgets.
 
-    This function visualizes the relationship between two scores (e.g., performance metrics)
-    for multiple methods. The scores are plotted against each other, allowing for comparison.
+    Parameters:
+    - methods_to_res_info (dict): Mapping of method names to DataFrames containing scores and budgets.
+    - score_label1 (str): Column name of the first score.
+    - score_label2 (str): Column name of the second score.
+    - score_display_label1 (str): Display name for the first score.
+    - score_display_label2 (str): Display name for the second score.
+    - init_score1 (float): Initial value for the first score.
+    - init_score2 (float): Initial value for the second score.
+    - method_to_plot_info (dict): Plotting information (color, marker, linestyle, etc.) for each method.
+    - method_to_display_name (dict): Mapping of method names to their display names.
+    - score_label3 (str, optional): Column name of the third score (if applicable). Defaults to None.
+    - score_display_label3 (str, optional): Display name for the third score. Defaults to None.
+    - init_score3 (float, optional): Initial value for the third score. Defaults to None.
+    - save_plots_path (str, optional): Path to save the generated plots. Defaults to "".
+    - default_linestyle (bool, optional): Whether to use default linestyle for all plots. Defaults to False.
+    - figsize (tuple, optional): Figure size. Defaults to (10, 6).
+    - flips_limit (int, optional): Maximum number of flips allowed. Defaults to None.
+    - append_to_title (str, optional): Additional text to append to the plot title. Defaults to "".
+    - append_to_save (str, optional): Additional text to append to the save filename. Defaults to "".
+    - display_title (bool, optional): Whether to display the plot title. Defaults to True.
+    - other_score1 (float, optional): Additional comparison score for the first metric. Defaults to None.
+    - other_score2 (float, optional): Additional comparison score for the second metric. Defaults to None.
+    - other_score_3 (float, optional): Additional comparison score for the third metric (if applicable). Defaults to None.
+    - other_method (str, optional): Additional comparison method. Defaults to None.
+    - score_2_min_axis (float, optional): Minimum value for the second score axis. Defaults to None.
+    - score_2_max_axis (float, optional): Maximum value for the second score axis. Defaults to None.
 
-    Args:
-        methods_to_res_info (dict): Dictionary mapping method names to their results DataFrame
-            containing performance metrics.
-        score_label1 (str): Column name for the first score to be plotted on the x-axis.
-        score_label2 (str): Column name for the second score to be plotted on the y-axis.
-        score_display_label1 (str): Display label for the first score.
-        score_display_label2 (str): Display label for the second score.
-        init_score1 (float): Initial value of the first score before any optimization.
-        init_score2 (float): Initial value of the second score before any optimization.
-        method_to_plot_info (dict): Dictionary containing plot attributes for each method
-            (e.g., color, linewidth, linestyle, marker size).
-        method_to_display_name (dict): Mapping of method names to display names.
-        opt_methods_display_labels (list): List of method labels to be highlighted in bold.
-        save_plots_path (str, optional): Path to save the generated plot. Defaults to "" (no save).
-        exp_idx (int, optional): Experiment index to be included in the plot title and filename. Defaults to None.
-        default_linestyle (bool, optional): If True, overrides all linestyles with a default solid line. Defaults to False.
-        figsize (tuple, optional): Figure size for the plot. Defaults to (20, 8).
-        flips_limit (int, optional): Maximum number of budget flips to include in the plot. Defaults to None.
-        predefined_colors (list, optional): A predefined list of colors for the plot lines. Defaults to an empty list.
-        append_to_title (str, optional): Additional text to append to the plot title. Defaults to "".
-        append_to_save (str, optional): Additional text to append to the save filename. Defaults to "".
-        display_title (bool, optional): Whether to display the plot title. Defaults to True.
-        other_score1 (float, optional): Alternative score value to be plotted for comparison. Defaults to None.
-        other_score2 (float, optional): Alternative score value to be plotted for comparison. Defaults to None.
-        other_method_label (str, optional): Label for the alternative method if `other_score1` and `other_score2` are provided. Defaults to None.
+    Returns:
+    - None
     """
+
+    if not display_title:
+        figsize = figsize
+        for m_info in method_to_plot_info.values():
+            m_info["linewidth"] = 2.5
+            m_info["marker_size"] = 50
+    hspace = 0.05
+    if not score_label3:
+        fig, (ax1, ax2) = plt.subplots(
+            nrows=2,
+            ncols=1,
+            sharex=True,
+            figsize=figsize,
+            gridspec_kw={"hspace": hspace},
+        )
+    else:
+        fig, (ax1, ax2, ax3) = plt.subplots(
+            nrows=3,
+            ncols=1,
+            sharex=True,
+            figsize=figsize,
+            gridspec_kw={"hspace": hspace},
+        )
 
     methods_scores1 = []
     methods_scores2 = []
-
+    methods_scores3 = []
     labels = []
     budget_list = []
     colors = []
     linewidths = []
     linestyles = []
     marker_sizes = []
+    markers = []
 
     for method, method_res_info_df in methods_to_res_info.items():
         labels.append(method_to_display_name[method])
-        method_res_info_df_cp = method_res_info_df.copy()
+        df_cp = method_res_info_df.copy()
+
         if flips_limit:
-            method_res_info_df_cp = method_res_info_df_cp[
-                method_res_info_df_cp["budget"] <= flips_limit
-            ]
-        method_scores1 = [init_score1] + method_res_info_df_cp[score_label1].to_list()
+            df_cp = df_cp[df_cp["budget"] <= flips_limit]
+
+        method_scores1 = [init_score1] + df_cp[score_label1].tolist()
+        method_scores2 = [init_score2] + df_cp[score_label2].tolist()
+        if score_label3:
+            method_scores3 = [init_score3] + df_cp[score_label3].tolist()
+            methods_scores3.append(method_scores3)
+
         methods_scores1.append(method_scores1)
-        method_scores2 = [init_score2] + method_res_info_df_cp[score_label2].to_list()
         methods_scores2.append(method_scores2)
-        method_budget = [0] + method_res_info_df_cp["budget"].to_list()
+
+        method_budget = [0] + df_cp["budget"].tolist()
         budget_list.append(method_budget)
+
         colors.append(method_to_plot_info[method]["color"])
         linewidths.append(method_to_plot_info[method]["linewidth"])
         linestyles.append(method_to_plot_info[method]["linestyle"])
         marker_sizes.append(method_to_plot_info[method]["marker_size"])
-
-    if default_linestyle:
-        linestyles = ["-"] * (len(labels))
+        markers.append(method_to_plot_info[method]["scatter_marker"])
 
     if other_score1 is not None and other_score2 is not None:
-        labels.append(other_method_label)
+        labels.append(method_to_display_name[other_method])
         methods_scores1.append([init_score1, other_score1])
         methods_scores2.append([init_score2, other_score2])
         budget_list.append([0, max(budget_list[0])])
-        colors.append("red")
-        linewidths.append(linewidths[0])
-        linestyles.append("--")
-        marker_sizes.append(marker_sizes[0])
+        colors.append(method_to_plot_info[other_method]["color"])
+        linewidths.append(method_to_plot_info[other_method]["linewidth"])
+        linestyles.append(method_to_plot_info[other_method]["linestyle"])
+        marker_sizes.append(method_to_plot_info[other_method]["marker_size"])
+        markers.append(method_to_plot_info[other_method]["scatter_marker"])
 
-    if predefined_colors:
-        if len(labels) > len(predefined_colors):
-            raise ValueError("len(labels) > len(predefined_colors)")
-        colors = predefined_colors[: len(labels)]
+        if other_score_3 is not None:
+            methods_scores3.append([init_score3, other_score_3])
 
-    title = f"Strategies {score_display_label1} vs {score_display_label2} comparison{append_to_title}"
-    if exp_idx is not None:
-        title = f"{title} exp_idx: {exp_idx}"
+    labels.append(method_to_display_name["init"])
+    methods_scores1.append([init_score1])
+    methods_scores2.append([init_score2])
+    budget_list.append([0])
 
-    bold_labels = [label for label in labels if label in opt_methods_display_labels]
+    colors.append(method_to_plot_info["init"]["color"])
+    linewidths.append(method_to_plot_info["init"]["linewidth"])
+    linestyles.append(method_to_plot_info["init"]["linestyle"])
+    marker_sizes.append(method_to_plot_info["init"]["marker_size"])
+    markers.append(method_to_plot_info["init"]["scatter_marker"])
+    if score_label3:
+        methods_scores3.append([init_score3])
 
-    mlr_save_path = ""
-    if save_plots_path:
-        mlr_save_path = f"{save_plots_path}methods_{score_label1}_vs_{score_label2}{append_to_save}.pdf"
+    if default_linestyle:
+        linestyles = ["-"] * len(labels)
 
-    plot_graphs(
-        values_lists=methods_scores2,
-        labels=labels,
-        xlabel=score_display_label1,
-        ylabel=score_display_label2,
-        colors=colors,
-        title=title if display_title else "",
-        save_path=mlr_save_path,
-        figsize=figsize,
-        linewidths=linewidths,
-        bold_labels=bold_labels,
-        x_values=methods_scores1,
-        linestyles=linestyles,
-        scatter_plot=True,
-        rev_xaxis=True,
-        marker_sizes=marker_sizes,
+    for i, label in enumerate(labels):
+        ax1.plot(
+            budget_list[i],
+            methods_scores1[i],
+            label=label,
+            color=colors[i],
+            linewidth=linewidths[i],
+            linestyle="-",
+        )
+
+        ax2.plot(
+            budget_list[i],
+            methods_scores2[i] if not score_label3 else methods_scores3[i],
+            label=label,
+            color=colors[i],
+            linewidth=linewidths[i],
+            linestyle="-",
+        )
+        if score_label3:
+            ax3.plot(
+                budget_list[i],
+                methods_scores2[i],
+                label=label,
+                color=colors[i],
+                linewidth=linewidths[i],
+                linestyle="-",
+            )
+
+    for i, label in enumerate(labels):
+        scatter_s_idx = 1 if i != len(labels) - 1 else 0
+        ax1.scatter(
+            budget_list[i][scatter_s_idx:],
+            methods_scores1[i][scatter_s_idx:],
+            color=colors[i],
+            s=marker_sizes[i],
+            marker=markers[i],
+            zorder=3 if i == len(labels) - 1 else 2,
+        )
+
+        ax2.scatter(
+            budget_list[i][scatter_s_idx:],
+            (
+                methods_scores2[i][scatter_s_idx:]
+                if not score_label3
+                else methods_scores3[i][scatter_s_idx:]
+            ),
+            color=colors[i],
+            s=marker_sizes[i],
+            marker=markers[i],
+            zorder=3 if i == len(labels) - 1 else 2,
+        )
+
+        if score_label3:
+            ax3.scatter(
+                budget_list[i][scatter_s_idx:],
+                methods_scores2[i][scatter_s_idx:],
+                color=colors[i],
+                s=marker_sizes[i],
+                marker=markers[i],
+                zorder=3 if i == len(labels) - 1 else 2,
+            )
+
+    ax1.set_ylabel(score_display_label1)
+    (
+        ax2.set_ylabel(score_display_label2)
+        if not score_label3
+        else ax2.set_ylabel(score_display_label3)
     )
+    if score_label3:
+        ax3.set_ylabel(score_display_label2)
+        ax3.set_xlabel("Maximum Number of Flips")
+    else:
+        ax2.set_xlabel("Maximum Number of Flips")
+
+    if (score_2_min_axis is not None) and (score_2_max_axis is not None):
+        (
+            ax2.set_ylim(score_2_min_axis, score_2_max_axis)
+            if not score_label3
+            else ax3.set_ylim(score_2_min_axis, score_2_max_axis)
+        )
+
+    if score_label3:
+        title = f"Strategies {score_display_label1}, {score_display_label2}, {score_display_label3} comparison{append_to_title}"
+    else:
+        title = f"Strategies {score_display_label1} vs {score_display_label2} comparison{append_to_title}"
+
+    if display_title:
+        fig.suptitle(title)
+
+    unique_label_color_marker = list(zip(labels, colors, markers))
+    method_legend_handles = [
+        plt.Line2D(
+            [0], [0], marker=m, color="w", markerfacecolor=c, markersize=10, label=l
+        )
+        for (l, c, m) in sorted(unique_label_color_marker, key=lambda x: x[0])
+    ]
+
+    label_spacing = 0.2
+    handle_marker_spacing = 0.1
+    legend_opacity = 0.5
+
+    if score_label3:
+        ax3.legend(
+            handles=method_legend_handles,
+            loc="best",
+            labelspacing=label_spacing,
+            handletextpad=handle_marker_spacing,
+            framealpha=legend_opacity,
+        )
+    else:
+        ax2.legend(
+            handles=method_legend_handles,
+            loc="best",
+            labelspacing=label_spacing,
+            handletextpad=handle_marker_spacing,
+            framealpha=legend_opacity,
+        )
+
+    if save_plots_path:
+        if score_label3:
+            save_path = f"{save_plots_path}methods_{score_label1}_vs_{score_label2}_vs_{score_label3}{append_to_save}.pdf"
+        else:
+            save_path = f"{save_plots_path}methods_{score_label1}_vs_{score_label2}{append_to_save}.pdf"
+        plt.savefig(save_path, bbox_inches="tight")
+
+    plt.show()
 
 
 def plot_min_C_reach_limit(
@@ -1805,7 +1320,7 @@ def plot_min_C_reach_limit(
         display_title (bool, optional): Whether to display the plot title. Defaults to True.
 
     Returns:
-        None: The function generates and displays a horizontal bar chart but does not return a value.
+        None
     """
 
     labels = []
@@ -1946,4 +1461,59 @@ def plot_thresholds_adjustments(
     if save_path:
         plt.savefig(f"{save_path}.{format}", format=format, dpi=300)
 
+    plt.show()
+
+
+def plot_fairness_loss_per_partitioning(
+    ids,
+    init_fairness_loss_list,
+    where_fairness_loss_list,
+    init_fairness_loss_list_weighted,
+    where_fairness_loss_list_weighted,
+    save_plots_path,
+    display_title=True,
+    set_label="Test",
+):
+    fig, axes = plt.subplots(2, 1, figsize=(16, 6))
+
+    ids_str = [str(i) for i in ids]
+
+    # Non-weighted Fairness Loss
+    axes[0].plot(ids_str, init_fairness_loss_list, label="base")
+    axes[0].scatter(ids_str, init_fairness_loss_list)
+    axes[0].plot(
+        ids_str,
+        where_fairness_loss_list,
+        label="FairWhere",
+        linestyle="dashed",
+    )
+    axes[0].scatter(ids_str, where_fairness_loss_list)
+    axes[0].set_xlabel("Partitioning Id")
+    axes[0].set_ylabel("Fairness Loss")
+    if display_title:
+        axes[0].set_title(f"Fairness Loss per Partitioning ({set_label})")
+    axes[0].legend()
+
+    # Weighted Fairness Loss
+    axes[1].plot(ids_str, init_fairness_loss_list_weighted, label="base")
+    axes[1].scatter(ids_str, init_fairness_loss_list_weighted)
+    axes[1].plot(
+        ids_str,
+        where_fairness_loss_list_weighted,
+        label="FairWhere",
+        linestyle="dashed",
+    )
+    axes[1].scatter(ids_str, where_fairness_loss_list_weighted)
+    axes[1].set_xlabel("Partitioning Id")
+    axes[1].set_ylabel("Weighted Fairness Loss")
+    if display_title:
+        axes[1].set_title(f"Weighted Fairness Loss per Partitioning ({set_label})")
+    axes[1].legend()
+
+    plt.tight_layout()
+
+    if save_plots_path:
+        plt.savefig(
+            f"{save_plots_path}fairness_loss_per_partitioning.pdf", format="pdf"
+        )
     plt.show()
