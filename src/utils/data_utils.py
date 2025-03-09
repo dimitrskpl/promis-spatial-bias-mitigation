@@ -119,10 +119,6 @@ def get_pos_info_regions(y_true, points_per_region):
             - pos_points_per_region (list of lists): A list of regions with remapped indices
                                                      for the positive class.
 
-    Processing steps:
-        - Finds indices where `y_true` equals 1.
-        - Creates a mapping from original indices to new position indices.
-        - Iterates over `points_per_region` to filter and remap indices based on the positive class.
     """
 
     pos_y_true_indices = np.where(np.array(y_true) == 1)[0]
