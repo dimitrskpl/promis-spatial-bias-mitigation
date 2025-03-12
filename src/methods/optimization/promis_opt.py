@@ -17,7 +17,7 @@ def minimize_promis_opt_obj(
     cont_sol=True,
 ):
     """
-    Solve the minimum MLR optimization problem.
+    Solve the minimum MLR optimization problem refering to PROMIS-Exact.
 
     This function uses Gurobi to minimize the MLR, ensuring fair distribution
     of positive labels within regions while adjusting probability ratios.
@@ -284,7 +284,7 @@ def minimize_promis_opt_obj_overlap(
     cont_sol=True,
 ):
     """
-    Solve the minimum MLR optimization problem with interaction constraints.
+    Solve the minimum MLR optimization problem with interaction constraints refering to PROMIS-Exact.
 
     This function uses Gurobi to solve an optimization problem that minimizes
     the MLR.

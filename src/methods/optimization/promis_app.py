@@ -16,7 +16,7 @@ def minimize_promis_app_obj(
     cont_sol=True,
 ):
     """
-    Solves an optimization problem to minimize the in-out disparity in classification fairness.
+    Solves an optimization problem to minimize the in-out disparity in classification fairness refering to PROMIS-Approx.
 
     Args:
         n_s (list): List containing the number of samples in each region.
@@ -201,7 +201,7 @@ def minimize_promis_app_obj_overlap(
     cont_sol=True,
 ):
     """
-    Solves an optimization problem to minimize the in-out disparity in classification fairness.
+    Solves an optimization problem to minimize the in-out disparity in classification fairness refering to PROMIS-Approx.
 
     Args:
         labels (np.ndarray): Array of binary classification labels (0s and 1s).
