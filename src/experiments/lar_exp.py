@@ -103,17 +103,17 @@ for partioning_type_name, overlap in partioning_type_names:
 
             fair_model.save_model(model_save_file)
 
-    # fair_model = SpatialFlipFairnessModel("iter")
-    # fair_model.multi_fit(
-    #     points_per_region=points_per_region,
-    #     n_flips_start=n_flips_start,
-    #     step=step,
-    #     n_flips=n_flips,
-    #     y_pred=y,
-    #     overlap=overlap,
-    #     verbose=1,
-    # )
+    fair_model = SpatialFlipFairnessModel("iter")
+    fair_model.multi_fit(
+        points_per_region=points_per_region,
+        n_flips_start=n_flips_start,
+        step=step,
+        n_flips=n_flips,
+        y_pred=y,
+        overlap=overlap,
+        verbose=1,
+    )
 
-    # fair_model.save_model(
-    #     f"{results_path}spatial_flip_models/{fairness_notion}/iter.pkl"
-    # )
+    fair_model.save_model(
+        f"{results_path}spatial_flip_models/{fairness_notion}/iter.pkl"
+    )
