@@ -1,4 +1,6 @@
-# this script is used to run the experiments on the LAR dataset
+# this script is used to run the experiments on the LAR dataset.
+# Additionally PROMIS-OPT method run with different work limits to show
+# the impact of the work limit on the solution quality.
 # You can comment the final lines of the script to run the experiments
 # without SpatalFlip method, which takes a long time to run.
 # You can also opt to run on specific audit regions by commenting/uncommenting the
@@ -45,11 +47,9 @@ partioning_type_names = [
 fairness_notion = "statistical_parity"
 
 promis_methods = [
-    ("promis_app", 300),
-    ("promis_opt", 300),
-    ("promis_opt", 1800),
-]  # [(promis_method_name, working_limit)]
-
+    "promis_app",
+    "promis_opt",
+]
 
 max_pr_shift = 0.1
 results = {}
@@ -71,43 +71,49 @@ for partioning_type_name, overlap in partioning_type_names:
 
     print(f"{clf_name}, {partioning_type_name}, {fairness_notion}")
 
-    for method, wlimit in promis_methods:
-        fair_model = SpatialOptimFairnessModel(method)
-        fair_model.multi_fit(
-            points_per_region=points_per_region,
-            n_flips_start=n_flips_start,
-            step=step,
-            n_flips=n_flips,
-            y_pred=y,
-            wlimit=wlimit,
-            fair_notion=fairness_notion,
-            overlap=overlap,
-            init_threshold=None,
-            no_of_threads=no_of_threads,
-            verbose=1,
-            max_pr_shift=max_pr_shift,
-        )
-
-        if method == "promis_opt":
-            model_save_file = f"{results_path}spatial_optim_models/{fairness_notion}/{method}_wlimit_{wlimit}.pkl"
-        else:
-            model_save_file = (
-                f"{results_path}spatial_optim_models/{fairness_notion}/{method}.pkl"
+    for method in promis_methods:
+        wlimits = [300]
+        if method == "promis_opt" and partioning_type_name == "overlap_k_100_radii_30":
+            wlimits.append(21600)
+        elif method == "promis_opt":
+            wlimits.append(1800)
+        for wlimit in wlimits:
+            fair_model = SpatialOptimFairnessModel(method)
+            fair_model.multi_fit(
+                points_per_region=points_per_region,
+                n_flips_start=n_flips_start,
+                step=step,
+                n_flips=n_flips,
+                y_pred=y,
+                wlimit=wlimit,
+                fair_notion=fairness_notion,
+                overlap=overlap,
+                init_threshold=None,
+                no_of_threads=no_of_threads,
+                verbose=1,
+                max_pr_shift=max_pr_shift,
             )
 
-        fair_model.save_model(model_save_file)
+            if method == "promis_opt":
+                model_save_file = f"{results_path}spatial_optim_models/{fairness_notion}/{method}_wlimit_{wlimit}.pkl"
+            else:
+                model_save_file = (
+                    f"{results_path}spatial_optim_models/{fairness_notion}/{method}.pkl"
+                )
 
-    fair_model = SpatialFlipFairnessModel("iter")
-    fair_model.multi_fit(
-        points_per_region=points_per_region,
-        n_flips_start=n_flips_start,
-        step=step,
-        n_flips=n_flips,
-        y_pred=y,
-        overlap=overlap,
-        verbose=1,
-    )
+            fair_model.save_model(model_save_file)
 
-    fair_model.save_model(
-        f"{results_path}spatial_flip_models/{fairness_notion}/iter.pkl"
-    )
+    # fair_model = SpatialFlipFairnessModel("iter")
+    # fair_model.multi_fit(
+    #     points_per_region=points_per_region,
+    #     n_flips_start=n_flips_start,
+    #     step=step,
+    #     n_flips=n_flips,
+    #     y_pred=y,
+    #     overlap=overlap,
+    #     verbose=1,
+    # )
+
+    # fair_model.save_model(
+    #     f"{results_path}spatial_flip_models/{fairness_notion}/iter.pkl"
+    # )
