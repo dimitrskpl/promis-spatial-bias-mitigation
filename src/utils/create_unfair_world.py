@@ -7,7 +7,7 @@ import random
 sys.path.append(os.path.abspath(os.path.join("..")))
 from utils.stats_utils import get_stats, get_signif_threshold
 from utils.stats_utils import get_stats
-from utils.scores import get_mlr
+from utils.scores import get_sbi
 from utils.data_utils import read_scanned_regs, get_y
 
 
@@ -101,13 +101,13 @@ def create_unfair_world(
     print(f"N={N_fair} points")
     print(f"P={P_fair} positives")
 
-    fair_mlr, fair_stats = get_mlr(fair_y_pred, test_points_per_region, with_stats=True)
+    fair_sbi, fair_stats = get_sbi(fair_y_pred, test_points_per_region, with_stats=True)
     fair_signif_thresh = get_signif_threshold(
         signif_level, n_alt_worlds, test_regions, N_fair, P_fair
     )
     fair_total_signif = sum([1 for s in fair_stats if s > fair_signif_thresh])
 
-    print(f"Original MLR: {fair_mlr:.3f}")
+    print(f"Original SBI: {fair_sbi:.3f}")
     print(f"Significance threshold: {fair_signif_thresh:.3f}")
     print(f"Total significant regions: {fair_total_signif}")
 
@@ -271,7 +271,7 @@ def create_unfair_world(
     unfair_y_pred = get_y(unfair_df, "pred")
     N, P = get_stats(unfair_df, "pred")
 
-    unfair_mlr, unfair_stats = get_mlr(
+    unfair_sbi, unfair_stats = get_sbi(
         unfair_y_pred, test_points_per_region, with_stats=True
     )
     unfair_signif_thresh = get_signif_threshold(
@@ -279,7 +279,7 @@ def create_unfair_world(
     )
     unfair_total_signif = sum([1 for s in unfair_stats if s > unfair_signif_thresh])
 
-    print(f"Unfair World MLR: {unfair_mlr:.3f}")
+    print(f"Unfair World SBI: {unfair_sbi:.3f}")
     print(f"Significance threshold: {unfair_signif_thresh:.3f}")
     print(f"Total significant regions: {unfair_total_signif}")
 

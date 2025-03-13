@@ -17,9 +17,9 @@ def minimize_promis_opt_obj(
     cont_sol=True,
 ):
     """
-    Solve the minimum MLR optimization problem refering to PROMIS-Exact.
+    Solve the minimum SBI optimization problem refering to PROMIS-Exact.
 
-    This function uses Gurobi to minimize the MLR, ensuring fair distribution
+    This function uses Gurobi to minimize the SBI, ensuring fair distribution
     of positive labels within regions while adjusting probability ratios.
 
     Args:
@@ -284,10 +284,10 @@ def minimize_promis_opt_obj_overlap(
     cont_sol=True,
 ):
     """
-    Solve the minimum MLR optimization problem with interaction constraints refering to PROMIS-Exact.
+    Solve the minimum SBI optimization problem with interaction constraints refering to PROMIS-Exact.
 
     This function uses Gurobi to solve an optimization problem that minimizes
-    the MLR.
+    the SBI.
 
     Args:
         labels (array-like): A binary array where 1 represents a positive label and 0 represents a negative label.

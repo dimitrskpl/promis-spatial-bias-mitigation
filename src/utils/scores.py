@@ -242,109 +242,16 @@ def compute_statistic_with_info(n, p, N, P, verbose=False):
     return statistic, rho_in, rho_out
 
 
-def fair_mlr(labels, points_per_region, sign_thres):
+def get_sbi(labels, points_per_region, with_stats=False):
     """
-    Computes the mean likelihood ratio (MLR) for regions, setting values below the significance threshold to zero.
-
-    Args:
-        labels (np.ndarray): Array of binary labels.
-        points_per_region (list): List of regions, each containing indices of points.
-        sign_thres (float): Significance threshold for filtering.
-
-    Returns:
-        float: Mean likelihood ratio (MLR) across the regions.
-    """
-
-    P = np.sum(labels)
-    N = len(labels)
-    list_stats = []
-    for i in range(len(points_per_region)):
-        n = len(points_per_region[i])
-        p = np.sum(labels[points_per_region[i]])
-        stat_i = compute_statistic(n, p, N, P)
-        if stat_i < sign_thres:
-            stat_i = 0
-
-        list_stats.append(stat_i)
-
-    mlr = np.mean(list_stats)
-    return mlr
-
-
-def get_fair_mlr_ratio(labels, points_per_region, sign_thres):
-    """
-    Computes the mean likelihood ratio (MLR) ratio for regions relative to a significance threshold.
-
-    Args:
-        labels (np.ndarray): Array of binary labels.
-        points_per_region (list): List of regions, each containing indices of points.
-        sign_thres (float): Significance threshold for filtering.
-
-    Returns:
-        float: Mean likelihood ratio (MLR) ratio across the regions.
-    """
-
-    P = np.sum(labels)
-    N = len(labels)
-    list_stat_ratio = []
-
-    for i in range(len(points_per_region)):
-        n = len(points_per_region[i])
-        p = np.sum(labels[points_per_region[i]])
-        stat_i = compute_statistic(n, p, N, P)
-        if stat_i < sign_thres:
-            stat_i = sign_thres
-
-        stat_i_ratio = sign_thres / stat_i
-        list_stat_ratio.append(stat_i_ratio)
-
-    mlr_ratio = np.mean(list_stat_ratio)
-    return mlr_ratio
-
-
-def stats_to_fair_mlr(stats, sign_thres):
-    """
-    Adjusts a list of statistics by setting values below a threshold to zero and computes the mean.
-
-    Args:
-        stats (list): List of computed statistics.
-        sign_thres (float): Significance threshold for filtering.
-
-    Returns:
-        float: Mean of adjusted statistics.
-    """
-    new_stats = [0 if stats[i] < sign_thres else stats[i] for i in range(len(stats))]
-    return np.mean(new_stats)
-
-
-def stats_to_fair_mlr_ratio(stats, sign_thres):
-    """
-    Adjusts a list of statistics by computing the ratio to the threshold for values above it and returns the mean.
-
-    Args:
-        stats (list): List of computed statistics.
-        sign_thres (float): Significance threshold for filtering.
-
-    Returns:
-        float: Mean ratio of the statistics relative to the significance threshold.
-    """
-
-    stats_ratios = [
-        1 if stats[i] < sign_thres else sign_thres / stats[i] for i in range(len(stats))
-    ]
-    return np.mean(stats_ratios)
-
-
-def get_mlr(labels, points_per_region, with_stats=False):
-    """
-    Computes the Mean Likelihood Ratio (MLR) for a set of regions based on the label distribution.
+    Computes the Mean Likelihood Ratio (SBI) for a set of regions based on the label distribution.
 
     Args:
         labels (np.ndarray): Array of binary labels for all points.
         points_per_region (list): List of regions, where each region contains indices of points.
 
     Returns:
-        float: The Mean Likelihood Ratio (MLR) across all regions.
+        float: The Mean Likelihood Ratio (SBI) across all regions.
     """
 
     P = np.sum(labels)
@@ -359,11 +266,11 @@ def get_mlr(labels, points_per_region, with_stats=False):
         _, l0, l1_i = compute_statistic_l0_l1(n, p, N, P)
         list_stats.append(1 - l1_i / l0)
 
-    mlr = np.mean(list_stats)
+    sbi = np.mean(list_stats)
     if with_stats:
-        return mlr, list_stats
+        return sbi, list_stats
 
-    return mlr
+    return sbi
 
 
 def get_fair_stat_ratios(stats, pr_s, PR, max_stat=None):

@@ -489,7 +489,7 @@ def plot_opt_methods_status(
         if display_title:
             plt.title(title)
 
-        plt.xlabel("Maximum Number of Flips")
+        plt.xlabel("Number of Flips Allowed (B)")
         plt.yticks([])
 
         plt.legend()
@@ -502,7 +502,7 @@ def plot_opt_methods_status(
 
 def plot_scores(
     methods_to_res_info,
-    init_mlr,
+    init_sbi,
     method_to_plot_info,
     method_to_display_name,
     save_plots_path="",
@@ -511,22 +511,22 @@ def plot_scores(
     optim_sols_only=False,
     append_to_title="",
     append_to_save="",
-    score_label="mlr",
+    score_label="sbi",
     display_title=True,
-    other_mlr=None,
-    other_mlr_method=None,
+    other_sbi=None,
+    other_sbi_method=None,
 ):
     """
-    Plots the MLR score drop comparison across different methods.
+    Plots the SBI score drop comparison across different methods.
 
     This function visualizes the performance of different optimization strategies by plotting
-    their MLR scores over varying budgets. It allows customization of line styles, colors,
+    their SBI scores over varying budgets. It allows customization of line styles, colors,
     and other graphical elements.
 
     Args:
         methods_to_res_info (dict): A dictionary mapping method names to their corresponding
             results DataFrame, which includes performance metrics.
-        init_mlr (float): The initial MLR value before any optimization.
+        init_sbi (float): The initial SBI value before any optimization.
         method_to_plot_info (dict): A dictionary containing plot attributes for each method
             (e.g., color, linewidth, linestyle, marker size).
         method_to_display_name (dict): A mapping from method names to their display labels.
@@ -536,17 +536,17 @@ def plot_scores(
         optim_sols_only (bool, optional): If True, filters only optimal solutions (status=1) from the results. Defaults to False.
         append_to_title (str, optional): Additional text to append to the plot title. Defaults to "".
         append_to_save (str, optional): Additional text to append to the save filename. Defaults to "".
-        score_label (str, optional): Column name in the DataFrame representing the score to plot. Defaults to "mlr".
+        score_label (str, optional): Column name in the DataFrame representing the score to plot. Defaults to "sbi".
         display_title (bool, optional): Whether to display the plot title. Defaults to True.
-        other_mlr (float, optional): A horizontal reference line at a specific MLR value. Defaults to None.
-        other_mlr_method (str, optional): Label for the horizontal reference line. Defaults to None.
+        other_sbi (float, optional): A horizontal reference line at a specific SBI value. Defaults to None.
+        other_sbi_method (str, optional): Label for the horizontal reference line. Defaults to None.
 
     Returns:
         None
     """
 
-    scatter_mlrs = []
-    line_mlrs = []
+    scatter_sbis = []
+    line_sbis = []
 
     labels = []
     line_budget_list = []
@@ -568,9 +568,9 @@ def plot_scores(
             method_res_info_df_cp = method_res_info_df_cp[
                 method_res_info_df_cp["budget"] <= flips_limit
             ]
-        method_mlrs = method_res_info_df_cp[score_label].to_list()
-        line_mlrs.append([init_mlr] + method_mlrs)
-        scatter_mlrs.append(method_mlrs)
+        method_sbis = method_res_info_df_cp[score_label].to_list()
+        line_sbis.append([init_sbi] + method_sbis)
+        scatter_sbis.append(method_sbis)
 
         method_budget = method_res_info_df_cp["budget"].to_list()
         line_budget_list.append([0] + method_budget)
@@ -582,33 +582,33 @@ def plot_scores(
         markers_sz.append(method_to_plot_info[method]["marker_size"])
         markers.append(method_to_plot_info[method]["scatter_marker"])
 
-    if other_mlr is not None:
-        labels.append(method_to_display_name[other_mlr_method])
-        line_mlrs.append([init_mlr, other_mlr])
-        scatter_mlrs.append([other_mlr])
+    if other_sbi is not None:
+        labels.append(method_to_display_name[other_sbi_method])
+        line_sbis.append([init_sbi, other_sbi])
+        scatter_sbis.append([other_sbi])
         line_budget_list.append([0, max(line_budget_list[-1])])
         scatter_budget_list.append([max(line_budget_list[-1])])
-        colors.append(method_to_plot_info[other_mlr_method]["color"])
-        linewidths.append(method_to_plot_info[other_mlr_method]["linewidth"])
-        linestyles.append(method_to_plot_info[other_mlr_method]["linestyle"])
-        markers_sz.append(method_to_plot_info[other_mlr_method]["marker_size"])
-        markers.append(method_to_plot_info[other_mlr_method]["scatter_marker"])
+        colors.append(method_to_plot_info[other_sbi_method]["color"])
+        linewidths.append(method_to_plot_info[other_sbi_method]["linewidth"])
+        linestyles.append(method_to_plot_info[other_sbi_method]["linestyle"])
+        markers_sz.append(method_to_plot_info[other_sbi_method]["marker_size"])
+        markers.append(method_to_plot_info[other_sbi_method]["scatter_marker"])
 
-    title = f"Strategies MLR drop comparison{append_to_title}"
-    xlabel = "Maximum Number of Flips"
-    ylabel = "MLR"
-    mlr_save_path = ""
+    title = f"Strategies SBI drop comparison{append_to_title}"
+    xlabel = "Number of Flips Allowed (B)"
+    ylabel = "SBI"
+    sbi_save_path = ""
     if save_plots_path:
-        mlr_save_path = f"{save_plots_path}methods_mlr{append_to_save}.pdf"
+        sbi_save_path = f"{save_plots_path}methods_sbi{append_to_save}.pdf"
 
     ax = plot_graphs(
-        values_lists=line_mlrs,
+        values_lists=line_sbis,
         labels=labels,
         xlabel=xlabel,
         ylabel=ylabel,
         colors=colors,
         title=title if display_title else "",
-        save_path=mlr_save_path,
+        save_path=sbi_save_path,
         figsize=figsize,
         linewidths=linewidths,
         x_values=line_budget_list,
@@ -622,13 +622,13 @@ def plot_scores(
     )
 
     plot_graphs(
-        values_lists=scatter_mlrs + [init_mlr],
+        values_lists=scatter_sbis + [init_sbi],
         labels=labels + [method_to_display_name["init"]],
         xlabel=xlabel,
         ylabel=ylabel,
         colors=colors + [method_to_plot_info["init"]["color"]],
         title=title if display_title else "",
-        save_path=mlr_save_path,
+        save_path=sbi_save_path,
         figsize=figsize,
         linewidths=linewidths + [method_to_plot_info["init"]["linewidth"]],
         x_values=scatter_budget_list + [0],
@@ -743,7 +743,7 @@ def plot_compare_methods_info(
     markers_sz_scatter = markers_sz + [method_to_plot_info["init"]["marker_size"]]
     markers_scatter = markers + [method_to_plot_info["init"]["scatter_marker"]]
     zorders_scatter = zorders + [3]
-    xlabel = "Maximum Number of Flips"
+    xlabel = "Number of Flips Allowed (B)"
     ax_p = plot_graphs(
         values_lists=p_list,
         labels=labels,
@@ -989,10 +989,10 @@ def plot_regions_norm_stats(
         )
 
     ax.set_xlabel(xlabel)
-    ax.set_ylabel("Normalized Statistic")
+    ax.set_ylabel("SBIr")
 
     if display_title:
-        ax.set_title(f"Normalized Statistic Per Region {append_to_title}")
+        ax.set_title(f"SBI per Region {append_to_title}")
 
     ax.legend(
         framealpha=0.2,
@@ -1060,7 +1060,7 @@ def plot_score1_vs_score2(
     - save_plots_path (str, optional): Path to save the generated plots. Defaults to "".
     - default_linestyle (bool, optional): Whether to use default linestyle for all plots. Defaults to False.
     - figsize (tuple, optional): Figure size. Defaults to (10, 6).
-    - flips_limit (int, optional): Maximum number of flips allowed. Defaults to None.
+    - flips_limit (int, optional): Number of Flips Allowed (B) allowed. Defaults to None.
     - append_to_title (str, optional): Additional text to append to the plot title. Defaults to "".
     - append_to_save (str, optional): Additional text to append to the save filename. Defaults to "".
     - display_title (bool, optional): Whether to display the plot title. Defaults to True.
@@ -1234,9 +1234,9 @@ def plot_score1_vs_score2(
     )
     if score_label3:
         ax3.set_ylabel(score_display_label2)
-        ax3.set_xlabel("Maximum Number of Flips")
+        ax3.set_xlabel("Number of Flips Allowed (B)")
     else:
-        ax2.set_xlabel("Maximum Number of Flips")
+        ax2.set_xlabel("Number of Flips Allowed (B)")
 
     if (score_2_min_axis is not None) and (score_2_max_axis is not None):
         (

@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 from sklearn import metrics
 from tqdm.notebook import tqdm
-from utils.scores import get_mlr
+from utils.scores import get_sbi
 from utils.data_utils import get_pos_info_regions
 import matplotlib
 
@@ -85,7 +85,7 @@ def get_sol_info(pts_to_change, pts_to_change_sol, y_pred):
 def get_labels_info(labels, points_per_region):
     """
     Computes the number of positive labels,
-    their positive ratio, and MLR
+    their positive ratio, and SBI
 
     Args:
         labels (np.ndarray): Binary labels (0s and 1s) representing classifications.
@@ -95,20 +95,20 @@ def get_labels_info(labels, points_per_region):
         pd.Series: A series containing:
             - "P" (int): Total count of positive labels.
             - "RHO" (float): Ratio of positive labels to total labels.
-            - "mlr" (float): Mean label ratio (MLR) across all regions.
+            - "sbi" (float): Mean label ratio (SBI) across all regions.
     """
 
     P = np.sum(labels)
     N = len(labels)
     RHO = P / N
-    mlr = get_mlr(labels, points_per_region)
+    sbi = get_sbi(labels, points_per_region)
 
     result = pd.Series(
-        [P, RHO, mlr],
+        [P, RHO, sbi],
         index=[
             "P",
             "RHO",
-            "mlr",
+            "sbi",
         ],
     )
 
@@ -162,8 +162,8 @@ def compute_all_results_info(
     - Extracts statistical metrics such as:
         - `P`: Total count of positive labels.
         - `RHO`: Proportion of positive labels.
-        - `mlr_st_par`: Mean label ratio.
-    - Computes fairness-related metrics MLR for equal opportunity and statistical parity.
+        - `sbi_st_par`: Mean label ratio.
+    - Computes fairness-related metrics SBI for equal opportunity and statistical parity.
     - Calculates accuracy and balanced accuracy scores for each budget if true labels are provided.
     - Returns all results in a dictionary.
     """
@@ -211,7 +211,7 @@ def compute_all_results_info(
                 [
                     "P_test",
                     "RHO_test",
-                    "mlr_st_par_test",
+                    "sbi_st_par_test",
                 ],
                 "y_pred_test",
                 test_points_per_region,
@@ -243,7 +243,7 @@ def compute_all_results_info(
                     [
                         "TP_test",
                         "TPR_test",
-                        "mlr_eq_opp_test",
+                        "sbi_eq_opp_test",
                     ],
                     "y_pred_test",
                     test_pos_y_true_indices,
@@ -391,7 +391,7 @@ def compute_avg_disparity_where_metrics(
     set_label="test",
 ):
     """
-    Computes disparity for all given predictions plus MLR and performance metrics for the "FairWhere" method's predictions.
+    Computes disparity for all given predictions plus SBI and performance metrics for the "FairWhere" method's predictions.
 
     Parameters:
     - all_methods_to_results_info (dict): Dictionary mapping method names to DataFrames containing results.
@@ -412,8 +412,8 @@ def compute_avg_disparity_where_metrics(
         - RHO_where (float): Ratio of positive predictions in the subset.
         - TP_where (int): Number of true positive predictions in the subset.
         - TPR_where (float): True positive rate for the subset.
-        - mlr_where_st_par (float): Mean likelihood ratio for statistical parity.
-        - mlr_where_eq_opp (float): Mean likelihood ratio for equal opportunity.
+        - sbi_where_st_par (float): Mean likelihood ratio for statistical parity.
+        - sbi_where_eq_opp (float): Mean likelihood ratio for equal opportunity.
         - acc_where (float): Accuracy of predictions in the subset.
         - f1_where (float): F1-score of predictions in the subset.
         - init_fairness_loss_list (list): Fairness loss for each partition without weighting.
@@ -434,9 +434,9 @@ def compute_avg_disparity_where_metrics(
     TP_where = np.sum(y_pred_where[pos_y_true_indices])
     TPR_where = TP_where / len(pos_y_true_indices)
 
-    # MLR
-    mlr_where_st_par = get_mlr(y_pred_where, points_per_region)
-    mlr_where_eq_opp = get_mlr(y_pred_where[pos_y_true_indices], pos_points_per_region)
+    # SBI
+    sbi_where_st_par = get_sbi(y_pred_where, points_per_region)
+    sbi_where_eq_opp = get_sbi(y_pred_where[pos_y_true_indices], pos_points_per_region)
 
     # Accuracy
     acc_where = metrics.accuracy_score(y_true, y_pred_where)
@@ -528,8 +528,8 @@ def compute_avg_disparity_where_metrics(
         RHO_where,
         TP_where,
         TPR_where,
-        mlr_where_st_par,
-        mlr_where_eq_opp,
+        sbi_where_st_par,
+        sbi_where_eq_opp,
         acc_where,
         f1_where,
         init_fairness_loss_list,
@@ -571,15 +571,15 @@ def compute_max_budget_info(
     partioning_type_name,
     fairness_notion,
     points_per_region,
-    init_mlr_st_par,
-    init_mlr_eq_opp,
+    init_sbi_st_par,
+    init_sbi_eq_opp,
     init_stats_st_par,
     init_stats_eq_opp,
     where_fit_time,
     y_pred_where,
     y_true,
-    mlr_where_st_par,
-    mlr_where_eq_opp,
+    sbi_where_st_par,
+    sbi_where_eq_opp,
     init_f1,
     f1_where_test,
     init_acc,
@@ -592,7 +592,7 @@ def compute_max_budget_info(
     This function aggregates results from different methods (passed as `all_methods_to_results_info`)
     for a maximum budget of label flips, and appends those results along with initial and optional
     "FairWhere" baseline outcomes to form a consolidated report. The report includes performance
-    metrics (accuracy or F1), fairness metrics (MLR and related statistics), total time taken,
+    metrics (accuracy or F1), fairness metrics (SBI and related statistics), total time taken,
     and metadata describing the dataset, classifier, and fairness notion.
 
     Args:
@@ -601,7 +601,7 @@ def compute_max_budget_info(
             Each DataFrame must contain columns including at least:
                 - "budget": The number of flips used.
                 - "time": The time taken for the method when using a certain budget.
-                - "mlr_st_par_test" and/or "mlr_eq_opp_test": Measured MLR values for the final test set,
+                - "sbi_st_par_test" and/or "sbi_eq_opp_test": Measured SBI values for the final test set,
                   depending on the fairness notion.
                 - "y_pred_test": The predicted labels on the test set.
                 - "fair_loss_sum_test": The sum of fairness losses on the test set (for DNN).
@@ -621,11 +621,11 @@ def compute_max_budget_info(
             The type of fairness metric used, either "statistical_parity" or "equal_opportunity".
         points_per_region (list or np.ndarray):
             A list or array indicating how many points fall into each region of interest
-            (used for calculating MLR).
-        init_mlr_st_par (float):
-            The initial (pre-flipping) MLR under statistical parity.
-        init_mlr_eq_opp (float):
-            The initial (pre-flipping) MLR under equal opportunity.
+            (used for calculating SBI).
+        init_sbi_st_par (float):
+            The initial (pre-flipping) SBI under statistical parity.
+        init_sbi_eq_opp (float):
+            The initial (pre-flipping) SBI under equal opportunity.
         init_stats_st_par (float):
             The initial (pre-flipping) statistics under statistical parity.
         init_stats_eq_opp (float):
@@ -637,10 +637,10 @@ def compute_max_budget_info(
         y_true (array-like):
             Ground truth labels for the test set. Used for measuring final performance metrics
             if it is not None.
-        mlr_where_st_par (float):
-            The MLR achieved by "FairWhere" under statistical parity (if `clf_name == "dnn"`).
-        mlr_where_eq_opp (float):
-            The MLR achieved by "FairWhere" under equal opportunity (if `clf_name == "dnn"`).
+        sbi_where_st_par (float):
+            The SBI achieved by "FairWhere" under statistical parity (if `clf_name == "dnn"`).
+        sbi_where_eq_opp (float):
+            The SBI achieved by "FairWhere" under equal opportunity (if `clf_name == "dnn"`).
         init_f1 (float):
             The initial F1 score prior to any flipping (applicable if `clf_name` starts with "dnn").
         f1_where_test (float):
@@ -662,9 +662,9 @@ def compute_max_budget_info(
             - "Time": The time taken for each method at the max budget (and None for the initial row).
             - "Accuracy": The accuracy scores (or None if classifier is DNN).
             - "F1": The F1 scores (or None if classifier is not DNN).
-            - "MLR": The final measured MLR for each method at max budget (and the initial value).
-            - "Statistics": Supporting statistics for the MLR calculation per method.
-            - "Mean Disparity": The fairness loss sums (if classifier is DNN), else None.
+            - "SBI": The final measured SBI for each method at max budget (and the initial value).
+            - "SBIr": Supporting statistics for the SBI calculation per method.
+            - "MeanDev": The fairness loss sums (if classifier is DNN), else None.
             - "Dataset": The dataset name (e.g., "Crime" or "LAR").
             - "Classifier": Human-readable classifier name (derived from `clf_name` via `get_clf_name`).
             - "Audit Regions": A label describing the partitioning, derived from `partioning_type_name`.
@@ -675,8 +675,8 @@ def compute_max_budget_info(
         y_true, points_per_region
     )
     methods = ["init"]
-    final_mlrs_st_par_test = [init_mlr_st_par]
-    final_mlrs_eq_opp_test = [init_mlr_eq_opp]
+    final_sbis_st_par_test = [init_sbi_st_par]
+    final_sbis_eq_opp_test = [init_sbi_eq_opp]
     final_times = [None]
     n_flips_ = budget_range[-1]
     budget_list = [0] + [n_flips_] * len(all_methods_to_results_info)
@@ -689,14 +689,14 @@ def compute_max_budget_info(
     final_fair_score_test_list = [init_fairness_loss_sum]
     for method, exp_res_df in all_methods_to_results_info.items():
         if fairness_notion == "statistical_parity":
-            mlr_st_par_test = exp_res_df[exp_res_df["budget"] == n_flips_][
-                "mlr_st_par_test"
+            sbi_st_par_test = exp_res_df[exp_res_df["budget"] == n_flips_][
+                "sbi_st_par_test"
             ].tolist()[0]
-            final_mlrs_st_par_test.append(mlr_st_par_test)
+            final_sbis_st_par_test.append(sbi_st_par_test)
             y_test_pred = exp_res_df[exp_res_df["budget"] == n_flips_][
                 "y_pred_test"
             ].tolist()[0]
-            _, final_stats_st_par_test = get_mlr(
+            _, final_stats_st_par_test = get_sbi(
                 y_test_pred, points_per_region, with_stats=True
             )
             final_stats_st_par_test_list.append(final_stats_st_par_test)
@@ -707,14 +707,14 @@ def compute_max_budget_info(
                     ].tolist()[0]
                 )
         else:
-            mlr_eq_opp_test = exp_res_df[exp_res_df["budget"] == n_flips_][
-                "mlr_eq_opp_test"
+            sbi_eq_opp_test = exp_res_df[exp_res_df["budget"] == n_flips_][
+                "sbi_eq_opp_test"
             ].tolist()[0]
             y_test_pred = exp_res_df[exp_res_df["budget"] == n_flips_][
                 "y_pred_test"
             ].tolist()[0]
             y_test_pred_pos = y_test_pred[pos_y_true_indices]
-            _, final_stats_eq_opp_test = get_mlr(
+            _, final_stats_eq_opp_test = get_sbi(
                 y_test_pred_pos, pos_points_per_region, with_stats=True
             )
             final_stats_eq_opp_test_list.append(final_stats_eq_opp_test)
@@ -741,7 +741,7 @@ def compute_max_budget_info(
             final_performance_test_list.append(None)
 
         if fairness_notion == "equal_opportunity":
-            final_mlrs_eq_opp_test.append(mlr_eq_opp_test)
+            final_sbis_eq_opp_test.append(sbi_eq_opp_test)
 
     final_results = {
         "Budget": budget_list,
@@ -756,10 +756,10 @@ def compute_max_budget_info(
         final_results["F1"] = [None] * len(final_performance_test_list)
 
     if fairness_notion == "statistical_parity":
-        final_results["MLR"] = final_mlrs_st_par_test
+        final_results["SBI"] = final_sbis_st_par_test
         final_results["Statistics"] = final_stats_st_par_test_list
     else:
-        final_results["MLR"] = final_mlrs_eq_opp_test
+        final_results["SBI"] = final_sbis_eq_opp_test
         final_results["Statistics"] = final_stats_eq_opp_test_list
 
     if clf_name == "dnn":
@@ -769,26 +769,26 @@ def compute_max_budget_info(
         final_results["F1"].append(f1_where_test)
         final_results["Accuracy"].append(None)
         if fairness_notion == "statistical_parity":
-            final_results["MLR"].append(mlr_where_st_par)
-            _, final_stats_st_par_test = get_mlr(
+            final_results["SBI"].append(sbi_where_st_par)
+            _, final_stats_st_par_test = get_sbi(
                 y_pred_where, points_per_region, with_stats=True
             )
             final_results["Statistics"].append(final_stats_st_par_test)
             final_fair_score_test_list.append(where_fairness_loss_sum)
-            final_results["Mean Disparity"] = final_fair_score_test_list
+            final_results["MeanDev"] = final_fair_score_test_list
 
         else:
-            final_results["MLR"].append(mlr_where_eq_opp)
-            _, final_stats_eq_opp_test = get_mlr(
+            final_results["SBI"].append(sbi_where_eq_opp)
+            _, final_stats_eq_opp_test = get_sbi(
                 y_pred_where[pos_y_true_indices],
                 pos_points_per_region,
                 with_stats=True,
             )
             final_results["Statistics"].append(final_stats_eq_opp_test)
             final_fair_score_test_list.append(where_fairness_loss_sum)
-            final_results["Mean Disparity"] = final_fair_score_test_list
+            final_results["MeanDev"] = final_fair_score_test_list
     else:
-        final_results["Mean Disparity"] = [None] * len(final_performance_test_list)
+        final_results["MeanDev"] = [None] * len(final_performance_test_list)
 
     final_results["Dataset"] = "Crime" if dataset_name == "crime" else "LAR"
     final_results["Classifier"] = get_clf_name(clf_name)
