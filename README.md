@@ -1,6 +1,8 @@
 # PROMIS: A Post-Processing Framework for Mitigating Spatial Bias
 
-This repository contains the official code for the paper titled **PROMIS: A Post-Processing Framework for Mitigating Spatial Bias**. 
+This repository contains the official code for the paper: \
+**PROMIS: A Post-Processing Framework for Mitigating Spatial Bias**  
+📄 ACM publication: https://dl.acm.org/doi/10.1145/3748636.3762760
 
 ## Table of Contents
 
